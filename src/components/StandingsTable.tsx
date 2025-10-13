@@ -9,13 +9,7 @@ type TeamStanding = {
   conference: string;
 };
 
-export default function StandingsTable({
-  standings,
-  teamLogos
-}: {
-  standings: TeamStanding[],
-  teamLogos: Record<string, string>
-}) {
+export default function StandingsTable({ standings }: { standings: TeamStanding[] }) {
   return (
     <table style={{
       width: "100%",

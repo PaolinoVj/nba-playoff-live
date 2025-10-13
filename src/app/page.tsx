@@ -7,6 +7,14 @@ const TEAMS_ENDPOINT = "https://api.balldontlie.io/v1/teams";
 const GAMES_ENDPOINT = "https://api.balldontlie.io/v1/games";
 const SEASON = 2024;
 
+type Team = {
+  id: number;
+  full_name: string;
+  abbreviation: string;
+  city: string;
+  conference: string;
+};
+
 type Game = {
   id: number;
   home_team: { id: number; full_name: string; conference: string };
@@ -58,7 +66,7 @@ function computeStandings(games: Game[]): TeamStanding[] {
 }
 
 export default function HomePage() {
-  const [teams, setTeams] = useState<any[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]); // ✅ Fixed: Team[] instead of any[]
   const [gamesToday, setGamesToday] = useState<Game[]>([]);
   const [recentResults, setRecentResults] = useState<Game[]>([]);
   const [allGames, setAllGames] = useState<Game[]>([]);
@@ -68,17 +76,13 @@ export default function HomePage() {
     async function fetchAll() {
       setLoading(true);
       try {
-        // Squadre
         const teamsResp = await fetch(TEAMS_ENDPOINT);
         setTeams((await teamsResp.json()).data);
-        // Partite di oggi
         const todayStr = new Date().toISOString().split("T")[0];
         const gamesResp = await fetch(`${GAMES_ENDPOINT}?dates[]=${todayStr}&season=${SEASON}&per_page=25`);
         setGamesToday((await gamesResp.json()).data);
-        // Ultimi risultati
         const recentResp = await fetch(`${GAMES_ENDPOINT}?season=${SEASON}&end_date=${todayStr}&per_page=10`);
         setRecentResults((await recentResp.json()).data);
-        // Tutte le partite della stagione (prima 100, paginabile all’occorrenza)
         const allResp = await fetch(`${GAMES_ENDPOINT}?season=${SEASON}&per_page=100`);
         setAllGames((await allResp.json()).data);
       } catch (e) { console.error("Errore API NBA:", e); }
@@ -95,12 +99,11 @@ export default function HomePage() {
   return (
     <main style={{ backgroundColor: "#1d428a", color: "#fff", minHeight: "100vh", padding: 16 }}>
       <h1>🏀 NBA 2024-25 Regular Season Live</h1>
-      {/* Standings - Eastern & Western */}
       <section>
         <h2>Classifica Conference (Top 10 Eastern)</h2>
-        <StandingsTable standings={standingsArray.filter(t => t.conference === "East").slice(0,10)} teamLogos={teamLogos} />
+        <StandingsTable standings={standingsArray.filter(t => t.conference === "East").slice(0,10)} />
         <h2>Classifica Conference (Top 10 Western)</h2>
-        <StandingsTable standings={standingsArray.filter(t => t.conference === "West").slice(0,10)} teamLogos={teamLogos} />
+        <StandingsTable standings={standingsArray.filter(t => t.conference === "West").slice(0,10)} />
       </section>
       <section>
         <h2>Partite di oggi</h2>
