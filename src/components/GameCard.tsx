@@ -14,22 +14,12 @@ type GameCardProps = {
   type: 'today' | 'upcoming' | 'finished';
 };
 
-// Helper per generare link Google
+// Helper per generare link Google - VERSIONE SEMPLIFICATA
 function getGoogleSearchLink(homeTeam: string, visitorTeam: string, type: string): string {
-  let query = '';
-  switch(type) {
-    case 'finished':
-      query = `${homeTeam} vs ${visitorTeam} NBA final score recap highlights`;
-      break;
-    case 'today':
-    case 'upcoming':
-      query = `${homeTeam} vs ${visitorTeam} NBA live score stats preview`;
-      break;
-    default:
-      query = `${homeTeam} vs ${visitorTeam} NBA`;
-  }
-  return `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=en`;
+  // Solo "Team vs Team" per Google Sports automatici
+  return `https://www.google.com/search?q=${encodeURIComponent(`${homeTeam} vs ${visitorTeam}`)}&hl=en`;
 }
+
 
 export default function GameCard({ game, type }: GameCardProps) {
   const getStatusColor = () => {
