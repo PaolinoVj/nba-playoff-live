@@ -119,53 +119,55 @@ export default function HomePage() {
         
         const allGames: Game[] = [];
         
-        // Process today's games
+        // Process today's games - FIX TYPESCRIPT
         if (todayRes.ok) {
           const todayData = await todayRes.json();
           if (todayData.events) {
-            todayData.events.forEach((event: any) => {
-              const comp = event.competitions[0];
-              const homeTeam = comp.competitors.find((c: any) => c.homeAway === 'home');
-              const awayTeam = comp.competitors.find((c: any) => c.homeAway === 'away');
+            todayData.events.forEach((event: Record<string, unknown>) => {
+              const comp = event.competitions?.[0] as Record<string, unknown>;
+              const competitors = comp?.competitors as Record<string, unknown>[];
+              const homeTeam = competitors?.find((c: Record<string, unknown>) => c.homeAway === 'home') as Record<string, unknown>;
+              const awayTeam = competitors?.find((c: Record<string, unknown>) => c.homeAway === 'away') as Record<string, unknown>;
               
               allGames.push({
-                gameId: event.id,
-                date: event.date,
-                homeTeam: homeTeam?.team?.abbreviation || '',
-                visitorTeam: awayTeam?.team?.abbreviation || '',
-                homeTeamName: homeTeam?.team?.displayName || '',
-                visitorTeamName: awayTeam?.team?.displayName || '',
-                homePts: parseInt(homeTeam?.score || '0'),
-                visitorPts: parseInt(awayTeam?.score || '0'),
-                status: comp.status.type.description || '',
-                venue: comp.venue?.fullName || '',
-                broadcast: comp.broadcasts?.[0]?.names?.[0] || event.broadcast
+                gameId: String(event.id || ''),
+                date: String(event.date || ''),
+                homeTeam: String((homeTeam?.team as Record<string, unknown>)?.abbreviation || ''),
+                visitorTeam: String((awayTeam?.team as Record<string, unknown>)?.abbreviation || ''),
+                homeTeamName: String((homeTeam?.team as Record<string, unknown>)?.displayName || ''),
+                visitorTeamName: String((awayTeam?.team as Record<string, unknown>)?.displayName || ''),
+                homePts: parseInt(String(homeTeam?.score || '0')),
+                visitorPts: parseInt(String(awayTeam?.score || '0')),
+                status: String((comp?.status as Record<string, unknown>)?.type?.description || ''),
+                venue: String((comp?.venue as Record<string, unknown>)?.fullName || ''),
+                broadcast: String((comp?.broadcasts as Record<string, unknown>[])?.[0]?.names?.[0] || event.broadcast || '')
               });
             });
           }
         }
         
-        // Process upcoming games  
+        // Process upcoming games - FIX TYPESCRIPT  
         if (upcomingRes.ok) {
           const upcomingData = await upcomingRes.json();
           if (upcomingData.events) {
-            upcomingData.events.forEach((event: any) => {
-              const comp = event.competitions[0];
-              const homeTeam = comp.competitors.find((c: any) => c.homeAway === 'home');
-              const awayTeam = comp.competitors.find((c: any) => c.homeAway === 'away');
+            upcomingData.events.forEach((event: Record<string, unknown>) => {
+              const comp = event.competitions?.[0] as Record<string, unknown>;
+              const competitors = comp?.competitors as Record<string, unknown>[];
+              const homeTeam = competitors?.find((c: Record<string, unknown>) => c.homeAway === 'home') as Record<string, unknown>;
+              const awayTeam = competitors?.find((c: Record<string, unknown>) => c.homeAway === 'away') as Record<string, unknown>;
               
               allGames.push({
-                gameId: event.id,
-                date: event.date,
-                homeTeam: homeTeam?.team?.abbreviation || '',
-                visitorTeam: awayTeam?.team?.abbreviation || '',
-                homeTeamName: homeTeam?.team?.displayName || '',
-                visitorTeamName: awayTeam?.team?.displayName || '',
-                homePts: parseInt(homeTeam?.score || '0'),
-                visitorPts: parseInt(awayTeam?.score || '0'),
-                status: comp.status.type.description || '',
-                venue: comp.venue?.fullName || '',
-                broadcast: comp.broadcasts?.[0]?.names?.[0] || event.broadcast
+                gameId: String(event.id || ''),
+                date: String(event.date || ''),
+                homeTeam: String((homeTeam?.team as Record<string, unknown>)?.abbreviation || ''),
+                visitorTeam: String((awayTeam?.team as Record<string, unknown>)?.abbreviation || ''),
+                homeTeamName: String((homeTeam?.team as Record<string, unknown>)?.displayName || ''),
+                visitorTeamName: String((awayTeam?.team as Record<string, unknown>)?.displayName || ''),
+                homePts: parseInt(String(homeTeam?.score || '0')),
+                visitorPts: parseInt(String(awayTeam?.score || '0')),
+                status: String((comp?.status as Record<string, unknown>)?.type?.description || ''),
+                venue: String((comp?.venue as Record<string, unknown>)?.fullName || ''),
+                broadcast: String((comp?.broadcasts as Record<string, unknown>[])?.[0]?.names?.[0] || event.broadcast || '')
               });
             });
           }
@@ -173,8 +175,9 @@ export default function HomePage() {
         
         setGames(allGames);
         
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {  // FIX TYPESCRIPT
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        setError(errorMessage);
         console.error("ESPN API Error:", err);
       }
       
