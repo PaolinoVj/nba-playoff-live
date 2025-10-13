@@ -12,40 +12,55 @@ type TeamStanding = {
 
 export default function StandingsTable({ standings }: { standings: TeamStanding[] }) {
   return (
-    <table style={{
-      width: "100%",
-      borderCollapse: "collapse",
-      background: "#fff",
-      color: "#222",
-      borderRadius: 8,
-      marginBottom: 24,
-      fontSize: "0.9em"
-    }}>
-      <thead style={{ background: "#1d428a", color: "#fff" }}>
-        <tr>
-          <th style={{padding: "8px", textAlign: "left"}}>SQUADRA</th>
-          <th style={{padding: "8px", textAlign: "center"}}>W</th>
-          <th style={{padding: "8px", textAlign: "center"}}>L</th>
-          <th style={{padding: "8px", textAlign: "center"}}>%</th>
-        </tr>
-      </thead>
-      <tbody>
-        {standings.map(st => (
-          <tr key={st.team}>
-            <td style={{padding: "8px"}}>
-              <img 
-                src={teamLogos[st.team] || "/favicon.jpg"} 
-                alt={st.team} 
-                style={{ width: 24, height: 24, borderRadius: 4, verticalAlign: "middle", marginRight: 8 }} 
-              />
-              <b>{st.team}</b>
-            </td>
-            <td style={{padding: "8px", textAlign: "center"}}>{st.wins}</td>
-            <td style={{padding: "8px", textAlign: "center"}}>{st.losses}</td>
-            <td style={{padding: "8px", textAlign: "center"}}>{st.pct.toFixed(3)}</td>
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Team
+            </th>
+            <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              W
+            </th>
+            <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              L
+            </th>
+            <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              PCT
+            </th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {standings.map((st, index) => (
+            <tr key={st.team} className="hover:bg-gray-50 transition-colors duration-150">
+              <td className="px-4 py-3 whitespace-nowrap">
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm font-medium text-gray-500 w-6">
+                    {index + 1}
+                  </span>
+                  <img 
+                    src={teamLogos[st.team] || "/favicon.jpg"} 
+                    alt={st.team} 
+                    className="w-6 h-6 object-contain"
+                  />
+                  <span className="text-sm font-medium text-gray-900">
+                    {st.team}
+                  </span>
+                </div>
+              </td>
+              <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium text-gray-900">
+                {st.wins}
+              </td>
+              <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium text-gray-900">
+                {st.losses}
+              </td>
+              <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium text-gray-900">
+                {st.pct.toFixed(3)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

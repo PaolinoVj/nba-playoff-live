@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import StandingsTable from '@/components/StandingsTable';
+import GameCard from '@/components/GameCard';
 
 // API NBA FUNZIONANTE
 const API_BASE = "https://api.server.nbaapi.com/api";
@@ -23,16 +24,15 @@ type Game = {
   visitorPts: number;
   isPlayoff: boolean;
   arena: string;
+  startTimeET?: string;
 };
 
-// Mappa squadre NBA per conference (semplificata)
 const WEST_TEAMS = ['LAL', 'GSW', 'DEN', 'PHX', 'SAC', 'LAC', 'POR', 'UTA', 'OKC', 'MIN', 'NOP', 'DAL', 'SAS', 'MEM', 'HOU'];
 
 function computeStandingsFromGames(games: Game[]): Team[] {
   const standings: Record<string, Team> = {};
   
   games.forEach(game => {
-    // Inizializza squadre se non esistono
     [game.homeTeam, game.visitorTeam].forEach(teamAbbr => {
       if (!standings[teamAbbr]) {
         standings[teamAbbr] = {
@@ -46,7 +46,6 @@ function computeStandingsFromGames(games: Game[]): Team[] {
       }
     });
     
-    // Conta vittorie/sconfitte solo per partite concluse
     if (game.homePts > 0 || game.visitorPts > 0) {
       standings[game.homeTeam].games++;
       standings[game.visitorTeam].games++;
@@ -61,7 +60,6 @@ function computeStandingsFromGames(games: Game[]): Team[] {
     }
   });
   
-  // Calcola percentuali e ordina
   return Object.values(standings)
     .map(team => ({
       ...team,
@@ -82,7 +80,6 @@ export default function HomePage() {
       setError("");
       
       try {
-        // Partite recenti (per standings)
         const gamesRes = await fetch(`${API_BASE}/games?page=1&pageSize=100&sortBy=date&ascending=false`);
         
         if (!gamesRes.ok) throw new Error(`HTTP ${gamesRes.status}`);
@@ -91,11 +88,11 @@ export default function HomePage() {
         const gamesList: Game[] = gamesData.data || [];
         
         setGames(gamesList);
-        setRecentGames(gamesList.slice(0, 15));
+        setRecentGames(gamesList.slice(0, 20));
         
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        setError(`Errore API: ${errorMessage}`);
+        setError(`API Error: ${errorMessage}`);
         console.error("NBA API Error:", err);
       }
       
@@ -103,100 +100,108 @@ export default function HomePage() {
     }
 
     fetchData();
-    // Aggiorna ogni 10 minuti
     const interval = setInterval(fetchData, 600000);
     return () => clearInterval(interval);
   }, []);
 
   if (loading) return (
-    <div style={{padding: 50, textAlign: 'center', background: '#1d428a', color: '#fff', minHeight: '100vh'}}>
-      🏀 Caricamento dati NBA...
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading NBA data...</p>
+      </div>
     </div>
   );
   
   const standings = computeStandingsFromGames(games.filter(g => !g.isPlayoff));
   const todayStr = new Date().toISOString().split('T')[0];
   const todayGames = recentGames.filter(game => game.date.startsWith(todayStr));
+  const upcomingGames = recentGames.filter(game => new Date(game.date) > new Date()).slice(0, 6);
+  const finishedGames = recentGames.filter(game => game.homePts > 0 && game.visitorPts > 0).slice(0, 8);
 
   return (
-    <main style={{ backgroundColor: "#1d428a", color: "#fff", minHeight: "100vh", padding: 16 }}>
-      <h1>🏀 NBA 2024-25 Live Stats</h1>
-      
+    <div className="min-h-screen bg-gray-50">
+      {/* Error Banner */}
       {error && (
-        <div style={{background:"#c8102e", padding:"12px", margin:"12px 0", borderRadius:"6px"}}>
-          ⚠️ {error}
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+          <div className="flex">
+            <div className="ml-3">
+              <p className="text-red-700">⚠️ {error}</p>
+            </div>
+          </div>
         </div>
       )}
-      
-      {/* Partite di oggi */}
-      <section style={{marginBottom: 30}}>
-        <h2>🔥 Partite di Oggi</h2>
-        {todayGames.length === 0 ? (
-          <p>Nessuna partita programmata oggi.</p>
-        ) : (
-          <ul style={{listStyle: "none", padding: 0}}>
-            {todayGames.map(game => (
-              <li key={game.gameId} style={{
-                background: "#2d5aa0", 
-                margin: "8px 0", 
-                padding: "12px", 
-                borderRadius: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between"
-              }}>
-                <div>
-                  <strong>{game.homeTeam} vs {game.visitorTeam}</strong>
-                  <br />
-                  <small>{game.arena}</small>
-                </div>
-                <div style={{textAlign: "right"}}>
-                  {game.homePts > 0 ? (
-                    <strong>{game.homePts} - {game.visitorPts}</strong>
-                  ) : (
-                    <span>In programma</span>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
 
-      {/* Standings */}
-      <section style={{marginBottom: 30}}>
-        <h2>📊 Classifica Eastern Conference</h2>
-        <StandingsTable standings={standings.filter(t => t.conference === 'East').slice(0, 8)} />
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <h2>📊 Classifica Western Conference</h2>
-        <StandingsTable standings={standings.filter(t => t.conference === 'West').slice(0, 8)} />
-      </section>
+        {/* Today's Games */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            🔴 Today's Games
+          </h2>
+          {todayGames.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+              <p className="text-gray-500">No games scheduled for today</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {todayGames.map(game => (
+                <GameCard key={game.gameId} game={game} type="today" />
+              ))}
+            </div>
+          )}
+        </section>
 
-      {/* Partite recenti */}
-      <section>
-        <h2>📈 Ultimi Risultati</h2>
-        <ul style={{listStyle: "none", padding: 0}}>
-          {recentGames.slice(0, 8).map(game => (
-            <li key={game.gameId} style={{
-              background: "#ffffff15", 
-              margin: "6px 0", 
-              padding: "10px", 
-              borderRadius: "6px",
-              fontSize: "0.9em"
-            }}>
-              <strong>{game.homeTeam} {game.homePts}</strong> - 
-              <strong>{game.visitorPts} {game.visitorTeam}</strong>
-              <small style={{marginLeft: 12, opacity: 0.7}}>
-                {new Date(game.date).toLocaleDateString()}
-              </small>
-            </li>
-          ))}
-        </ul>
-      </section>
+        {/* Upcoming Games */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            📅 Upcoming Games
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {upcomingGames.map(game => (
+              <GameCard key={game.gameId} game={game} type="upcoming" />
+            ))}
+          </div>
+        </section>
 
-      <footer style={{ marginTop: 40, textAlign: "center", opacity: 0.8, fontSize: "0.9em" }}>
-        Dati live da <strong>nbaapi.com</strong> • Aggiornamento automatico ogni 10 min
+        {/* Standings */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 Conference Standings</h2>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Eastern Conference</h3>
+              <StandingsTable standings={standings.filter(t => t.conference === 'East').slice(0, 8)} />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Western Conference</h3>
+              <StandingsTable standings={standings.filter(t => t.conference === 'West').slice(0, 8)} />
+            </div>
+          </div>
+        </section>
+
+        {/* Recent Results */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            📈 Recent Results
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {finishedGames.map(game => (
+              <GameCard key={game.gameId} game={game} type="finished" />
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="text-center text-sm text-gray-500">
+            Data provided by <span className="font-medium text-gray-900">NBA API</span> • 
+            Updated every 10 minutes
+          </div>
+        </div>
       </footer>
-    </main>
+    </div>
   );
 }

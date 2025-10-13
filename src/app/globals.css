@@ -1,128 +1,28 @@
-@import "tailwindcss"; /* se già usi Tailwind, puoi espandere con utility */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Palette NBA moderna */
-:root {
-  --nba-blue: #1d428a;
-  --nba-red: #c8102e;
-  --nba-white: #fff;
-  --nba-bg-dark: #181f2a;
-  --nba-bg-light: #e6eaef;
-  --nba-gray: #d4d4d8;
-  --nba-font: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
-}
-
-/* Corpo e fondo */
-body {
-  background: var(--nba-blue);
-  color: var(--nba-white);
-  font-family: var(--nba-font);
-  margin: 0;
-  min-height: 100vh;
-}
-
-/* Titoli */
-h1, h2, h3 {
-  font-family: var(--nba-font);
-  margin-top: 0.5em;
-  margin-bottom: 0.3em;
-  font-weight: bold;
-  letter-spacing: 0.03em;
-}
-
-h1 {
-  font-size: 2.2em;
-  text-shadow: 0 2px 10px #181f2a90;
-}
-
-h2 {
-  font-size: 1.4em;
-  color: var(--nba-red);
-}
-
-h3 {
-  font-size: 1.1em;
-}
-
-/* Sezioni e card */
-main {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-section {
-  background: var(--nba-bg-dark);
-  border-radius: 12px;
-  box-shadow: 0 2px 12px #00000025;
-  padding: 16px;
-  margin-bottom: 20px;
-  border-left: 5px solid var(--nba-red);
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
-  background: var(--nba-bg-light);
-  color: #222;
-  margin-bottom: 6px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 1em;
-  transition: background 0.2s;
-}
-
-li:hover {
-  background: var(--nba-gray);
-}
-
-footer {
-  text-align: center;
-  margin-top: 32px;
-  color: #bbb;
-  font-size: 0.9em;
-}
-
-a {
-  color: var(--nba-red);
-  text-decoration: underline;
-}
-
-@media (max-width: 600px) {
-  main {
-    padding: 7vw 4vw;
-    font-size: 1em;
-  }
-
-  section {
-    padding: 11px;
-  }
-
-  h1 {
-    font-size: 1.3em;
-  }
-}
+/* Theme Support */
 body[data-theme='dark'] {
-  background: #111a28;
-  color: #fff;
+  @apply bg-gray-900 text-gray-100;
 }
 
 body[data-theme='light'] {
-  background: #f8fafd;
-  color: #181f2a;
+  @apply bg-gray-50 text-gray-900;
 }
 
-@media (max-width: 600px) {
-  header {
-    font-size: 1.2em !important;
-    padding: 12px !important;
-  }
-  main {
-    padding: 7vw 4vw !important;
-  }
-  img {
-    height: 38px !important;
-  }
+/* Logo responsive fixes */
+img {
+  @apply object-contain;
+  aspect-ratio: 1 / 1;
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Cards hover effects */
+.card-hover {
+  @apply transform hover:scale-105 transition-transform duration-200;
 }

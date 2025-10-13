@@ -3,75 +3,48 @@ import "./globals.css";
 import { useEffect, useState } from "react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
-  // Aggiorna il data-theme sul body (per CSS)
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
   }, [theme]);
 
   return (
-    <>
-      {/* Header NBA con icona/logo */}
-      <header
-        style={{
-          background: "linear-gradient(90deg,#1d428a 60%,#c8102e 40%)",
-          color: theme === "dark" ? "#fff" : "#181f2a",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "22px",
-          fontWeight: "bold",
-          fontSize: "2.2em",
-          letterSpacing: "0.06em",
-        }}
-      >
-        <img
-          src="/favicon.jpg"
-          alt="NBA Cover"
-          style={{
-            height: 54,
-            marginRight: 22,
-            borderRadius: 12,
-            boxShadow: "0 2px 14px #0007",
-            background: "#fff",
-          }}
-        />
-        NBA 2024-25 Season Live
-        <button
-          style={{
-            marginLeft: 28,
-            padding: "8px 20px",
-            background: theme === "dark" ? "#f8fafd" : "#181f2a",
-            color: theme === "dark" ? "#1d428a" : "#fff",
-            border: "none",
-            borderRadius: 13,
-            cursor: "pointer",
-            fontWeight: "bold",
-            fontSize: "0.65em",
-            boxShadow: "0 2px 7px #2a2a2a33"
-          }}
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label="Switch Theme"
-        >
-          {theme === "dark" ? "Light Mode" : "Dark Mode"}
-        </button>
-      </header>
-      <main>{children}</main>
-      <footer
-        style={{
-          background: theme === "dark" ? "#181f2acc" : "#eaeaeaee",
-          color: theme === "dark" ? "#eee" : "#181f2a",
-          textAlign: "center",
-          padding: "14px",
-          marginTop: "38px",
-          fontSize: "1em",
-          borderTop: "4px solid #c8102e",
-          letterSpacing: "0.03em"
-        }}
-      >
-        Powered by <a href="https://balldontlie.io" style={{ color: "#c8102e" }}>balldontlie.io</a> | Made by PaolinoVj
-      </footer>
-    </>
+    <html lang="en">
+      <body>
+        {/* NBA Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              {/* NBA Logo + Title */}
+              <div className="flex items-center space-x-4">
+                <img
+                  src="https://logoeps.com/wp-content/uploads/2013/03/nba-vector-logo.png"
+                  alt="NBA Logo"
+                  className="h-10 w-auto"
+                />
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">
+                    NBA 2024-25
+                  </h1>
+                  <p className="text-sm text-gray-500">Live Stats & Scores</p>
+                </div>
+              </div>
+
+              {/* Theme Toggle */}
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+              >
+                {theme === "light" ? "🌙 Dark" : "☀️ Light"}
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main>{children}</main>
+      </body>
+    </html>
   );
 }
