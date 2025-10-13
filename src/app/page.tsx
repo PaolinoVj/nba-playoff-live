@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import StandingsTable from '@/components/StandingsTable';
 import GameCard from '@/components/GameCard';
 
-// API NBA FUNZIONANTE
 const API_BASE = "https://api.server.nbaapi.com/api";
 
 type Team = {
@@ -134,7 +133,6 @@ export default function HomePage() {
 
   return (
     <div style={{minHeight: '100vh', backgroundColor: '#f8f9fa'}}>
-      {/* Error Banner */}
       {error && (
         <div style={{
           backgroundColor: '#fef2f2',
@@ -146,10 +144,8 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Main Content */}
       <div style={{maxWidth: '1200px', margin: '0 auto', padding: '32px 16px'}}>
         
-        {/* Today's Games */}
         <section style={{marginBottom: '48px'}}>
           <h2 style={{
             fontSize: '24px',
@@ -157,7 +153,7 @@ export default function HomePage() {
             color: '#1f2937',
             marginBottom: '24px'
           }}>
-            🔴 Today's Games
+            🔴 Today&apos;s Games
           </h2>
           {todayGames.length === 0 ? (
             <div style={{
@@ -182,7 +178,6 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* Upcoming Games */}
         <section style={{marginBottom: '48px'}}>
           <h2 style={{
             fontSize: '24px',
@@ -203,7 +198,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Standings */}
         <section style={{marginBottom: '48px'}}>
           <h2 style={{
             fontSize: '24px',
@@ -243,7 +237,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Recent Results */}
         <section style={{marginBottom: '48px'}}>
           <h2 style={{
             fontSize: '24px',
@@ -265,19 +258,16 @@ export default function HomePage() {
         </section>
       </div>
 
-      {/* Footer */}
-<footer style={{
-  backgroundColor: 'white',
-  borderTop: '1px solid #e5e7eb',
-  padding: '24px 16px',
-  textAlign: 'center'
-}}>
-  <div style={{fontSize: '14px', color: '#6b7280'}}>
-    Data provided by <span style={{fontWeight: '500', color: '#1f2937'}}>NBA API</span> &bull; 
-    Updated every 10 minutes
-  </div>
-</footer>
-
+      <footer style={{
+        backgroundColor: 'white',
+        borderTop: '1px solid #e5e7eb',
+        padding: '24px 16px',
+        textAlign: 'center'
+      }}>
+        <div style={{fontSize: '14px', color: '#6b7280'}}>
+          Data provided by <span style={{fontWeight: '500', color: '#1f2937'}}>NBA API</span> - Updated every 10 minutes
+        </div>
+      </footer>
     </div>
   );
 }
