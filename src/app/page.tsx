@@ -266,17 +266,18 @@ export default function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer style={{
-        backgroundColor: 'white',
-        borderTop: '1px solid #e5e7eb',
-        padding: '24px 16px',
-        textAlign: 'center'
-      }}>
-        <div style={{fontSize: '14px', color: '#6b7280'}}>
-          Data provided by <span style={{fontWeight: '500', color: '#1f2937'}}>NBA API</span> • 
-          Updated every 10 minutes
-        </div>
-      </footer>
+<footer style={{
+  backgroundColor: 'white',
+  borderTop: '1px solid #e5e7eb',
+  padding: '24px 16px',
+  textAlign: 'center'
+}}>
+  <div style={{fontSize: '14px', color: '#6b7280'}}>
+    Data provided by <span style={{fontWeight: '500', color: '#1f2937'}}>NBA API</span> &bull; 
+    Updated every 10 minutes
+  </div>
+</footer>
+
     </div>
   );
 }
