@@ -3,7 +3,7 @@ import "./globals.css";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="it">
       <body>
         <header style={{
           backgroundColor: 'white',
@@ -27,7 +27,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {/* NBA Logo + Title (left) */}
               <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
                 <img
-                  src="https://logoeps.com/wp-content/uploads/2013/03/nba-vector-logo.png"
+                  src="https://logoeps.com/wp-content/uploads/2011/05/nba-logo-vector-01.png"
                   alt="NBA Logo"
                   style={{height: '40px', width: 'auto', objectFit: 'contain'}}
                 />
@@ -39,7 +39,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     margin: 0,
                     lineHeight: 1
                   }}>
-                    NBA 2024-25 Live
+                    NBA 2025-26 Live
                   </h1>
                   <p style={{
                     fontSize: '14px',
@@ -47,7 +47,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     margin: 0,
                     lineHeight: 1
                   }}>
-                    Scores & Schedules
+                    Punteggi e Calendario
                   </p>
                 </div>
               </div>
