@@ -3,151 +3,6 @@ import { useEffect, useState } from "react";
 import StandingsTable from '@/components/StandingsTable';
 import GameCard from '@/components/GameCard';
 
-useEffect(() => {
-  async function fetchESPNData() {
-    setLoading(true);
-    setError("");
-    
-    try {
-      // Fetch oggi
-      const todayRes = await fetch(`${ESPN_API}/scoreboard`);
-      // Fetch domani  
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = tomorrow.toISOString().split('T')[0].replace(/-/g, '');
-      const upcomingRes = await fetch(`${ESPN_API}/scoreboard?dates=${tomorrowStr}`);
-      
-      // Fetch standings dalla regular season 2024-25 - NUOVO!
-      const standingsRes = await fetch(`${ESPN_API}/standings`);
-      
-      if (!todayRes.ok && !upcomingRes.ok) {
-        throw new Error('ESPN API non disponibile');
-      }
-      
-      const allGames: Game[] = [];
-      
-      // Process today's games
-      if (todayRes.ok) {
-        const todayData = await todayRes.json();
-        if (todayData.events && Array.isArray(todayData.events)) {
-          todayData.events.forEach((event: any) => {
-            const comp = event?.competitions?.[0];
-            if (!comp) return;
-            
-            const homeTeam = comp?.competitors?.find((c: any) => c.homeAway === 'home');
-            const awayTeam = comp?.competitors?.find((c: any) => c.homeAway === 'away');
-            
-            allGames.push({
-              gameId: String(event.id || ''),
-              date: String(event.date || ''),
-              homeTeam: String(homeTeam?.team?.abbreviation || ''),
-              visitorTeam: String(awayTeam?.team?.abbreviation || ''),
-              homeTeamName: String(homeTeam?.team?.displayName || ''),
-              visitorTeamName: String(awayTeam?.team?.displayName || ''),
-              homePts: parseInt(String(homeTeam?.score || '0')),
-              visitorPts: parseInt(String(awayTeam?.score || '0')),
-              status: String(comp?.status?.type?.description || ''),
-              venue: String(comp?.venue?.fullName || ''),
-              broadcast: String(comp?.broadcasts?.[0]?.names?.[0] || event.broadcast || '')
-            });
-          });
-        }
-      }
-
-      // Process upcoming games
-      if (upcomingRes.ok) {
-        const upcomingData = await upcomingRes.json();
-        if (upcomingData.events && Array.isArray(upcomingData.events)) {
-          upcomingData.events.forEach((event: any) => {
-            const comp = event?.competitions?.[0];
-            if (!comp) return;
-            
-            const homeTeam = comp?.competitors?.find((c: any) => c.homeAway === 'home');
-            const awayTeam = comp?.competitors?.find((c: any) => c.homeAway === 'away');
-            
-            allGames.push({
-              gameId: String(event.id || ''),
-              date: String(event.date || ''),
-              homeTeam: String(homeTeam?.team?.abbreviation || ''),
-              visitorTeam: String(awayTeam?.team?.abbreviation || ''),
-              homeTeamName: String(homeTeam?.team?.displayName || ''),
-              visitorTeamName: String(awayTeam?.team?.displayName || ''),
-              homePts: parseInt(String(homeTeam?.score || '0')),
-              visitorPts: parseInt(String(awayTeam?.score || '0')),
-              status: String(comp?.status?.type?.description || ''),
-              venue: String(comp?.venue?.fullName || ''),
-              broadcast: String(comp?.broadcasts?.[0]?.names?.[0] || event.broadcast || '')
-            });
-          });
-        }
-      }
-
-      // NEW: Fetch e process standings reali dalla stagione 2024-25
-      if (standingsRes.ok) {
-        const standingsData = await standingsRes.json();
-        
-        // Creiamo partite fittizie basate sui record reali per calcolare standings
-        if (standingsData?.children) {
-          standingsData.children.forEach((conference: any) => {
-            if (conference?.standings?.entries) {
-              conference.standings.entries.forEach((entry: any) => {
-                const teamAbbr = entry.team?.abbreviation;
-                const wins = parseInt(entry.stats?.find((s: any) => s.name === 'wins')?.value || '0');
-                const losses = parseInt(entry.stats?.find((s: any) => s.name === 'losses')?.value || '0');
-                
-                // Creiamo partite fittizie per rappresentare i record
-                for (let i = 0; i < wins; i++) {
-                  allGames.push({
-                    gameId: `${teamAbbr}-win-${i}`,
-                    date: '2024-10-01T00:00Z',
-                    homeTeam: teamAbbr,
-                    visitorTeam: 'OPP',
-                    homePts: 100,
-                    visitorPts: 90,
-                    status: 'Final',
-                    venue: '',
-                    homeTeamName: entry.team?.displayName || teamAbbr,
-                    visitorTeamName: 'Opponent'
-                  });
-                }
-                
-                for (let i = 0; i < losses; i++) {
-                  allGames.push({
-                    gameId: `${teamAbbr}-loss-${i}`,
-                    date: '2024-10-01T00:00Z',
-                    homeTeam: teamAbbr,
-                    visitorTeam: 'OPP',
-                    homePts: 90,
-                    visitorPts: 100,
-                    status: 'Final',
-                    venue: '',
-                    homeTeamName: entry.team?.displayName || teamAbbr,
-                    visitorTeamName: 'Opponent'
-                  });
-                }
-              });
-            }
-          });
-        }
-      }
-      
-      setGames(allGames);
-      
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
-      console.error("ESPN API Error:", err);
-    }
-    
-    setLoading(false);
-  }
-
-  fetchESPNData();
-  const interval = setInterval(fetchESPNData, 300000); // 5 minuti
-  return () => clearInterval(interval);
-}, []);
-
-
 // ESPN API (funziona!)
 const ESPN_API = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba";
 
@@ -174,24 +29,21 @@ type Game = {
   visitorTeamName?: string;
 };
 
-
-
 // Conference mapping CORRETTA
 const WEST_TEAMS = [
-  'LAL', 'GSW', 'DEN', 'PHX', 'SAC', 'LAC', 'POR', 'UTA', 
-  'OKC', 'MIN', 'NOP', 'DAL', 'SAS', 'MEM', 'HOU'
+  'LAL', 'GS', 'DEN', 'PHX', 'SAC', 'LAC', 'POR', 'UTA', 
+  'OKC', 'MIN', 'NOP', 'DAL', 'SA', 'MEM', 'HOU'
 ];
 
 const EAST_TEAMS = [
   'ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DET', 'IND', 
-  'MIA', 'MIL', 'NYK', 'ORL', 'PHI', 'TOR', 'WAS'
+  'MIA', 'MIL', 'NY', 'ORL', 'PHI', 'TOR', 'WSH'
 ];
 
 // Helper per generare link Google - VERSIONE SEMPLIFICATA
 function getGoogleSearchLink(homeTeam: string, visitorTeam: string): string {
   return `https://www.google.com/search?q=${encodeURIComponent(`${homeTeam} vs ${visitorTeam}`)}&hl=en`;
 }
-
 
 function computeStandingsFromGames(games: Game[]): Team[] {
   const standings: Record<string, Team> = {};
@@ -210,7 +62,7 @@ function computeStandingsFromGames(games: Game[]): Team[] {
       }
     });
     
-    if (game.homePts > 0 && game.visitorPts > 0) {
+    if (game.homePts > 0 && game.visitorPts > 0 && game.visitorTeam !== 'OPP') {
       const homeAbbr = game.homeTeam;
       const visitorAbbr = game.visitorTeam;
       
@@ -261,13 +113,16 @@ export default function HomePage() {
         const tomorrowStr = tomorrow.toISOString().split('T')[0].replace(/-/g, '');
         const upcomingRes = await fetch(`${ESPN_API}/scoreboard?dates=${tomorrowStr}`);
         
+        // Fetch standings dalla regular season 2024-25
+        const standingsRes = await fetch(`${ESPN_API}/standings`);
+        
         if (!todayRes.ok && !upcomingRes.ok) {
           throw new Error('ESPN API non disponibile');
         }
         
-        const allGames: Game[] = []; // <-- MANCAVA QUESTA LINEA!
+        const allGames: Game[] = [];
         
-        // Process today's games - FIX TYPESCRIPT COMPLETO
+        // Process today's games
         if (todayRes.ok) {
           const todayData = await todayRes.json();
           if (todayData.events && Array.isArray(todayData.events)) {
@@ -295,7 +150,7 @@ export default function HomePage() {
           }
         }
 
-        // Process upcoming games - FIX TYPESCRIPT COMPLETO
+        // Process upcoming games
         if (upcomingRes.ok) {
           const upcomingData = await upcomingRes.json();
           if (upcomingData.events && Array.isArray(upcomingData.events)) {
@@ -319,6 +174,55 @@ export default function HomePage() {
                 venue: String(comp?.venue?.fullName || ''),
                 broadcast: String(comp?.broadcasts?.[0]?.names?.[0] || event.broadcast || '')
               });
+            });
+          }
+        }
+
+        // NEW: Fetch e process standings reali dalla stagione 2024-25
+        if (standingsRes.ok) {
+          const standingsData = await standingsRes.json();
+          
+          // Creiamo partite fittizie basate sui record reali per calcolare standings
+          if (standingsData?.children) {
+            standingsData.children.forEach((conference: any) => {
+              if (conference?.standings?.entries) {
+                conference.standings.entries.forEach((entry: any) => {
+                  const teamAbbr = entry.team?.abbreviation;
+                  const wins = parseInt(entry.stats?.find((s: any) => s.name === 'wins')?.value || '0');
+                  const losses = parseInt(entry.stats?.find((s: any) => s.name === 'losses')?.value || '0');
+                  
+                  // Creiamo partite fittizie per rappresentare i record
+                  for (let i = 0; i < wins; i++) {
+                    allGames.push({
+                      gameId: `${teamAbbr}-win-${i}`,
+                      date: '2024-10-01T00:00Z',
+                      homeTeam: teamAbbr,
+                      visitorTeam: 'OPP',
+                      homePts: 100,
+                      visitorPts: 90,
+                      status: 'Final',
+                      venue: '',
+                      homeTeamName: entry.team?.displayName || teamAbbr,
+                      visitorTeamName: 'Opponent'
+                    });
+                  }
+                  
+                  for (let i = 0; i < losses; i++) {
+                    allGames.push({
+                      gameId: `${teamAbbr}-loss-${i}`,
+                      date: '2024-10-01T00:00Z',
+                      homeTeam: teamAbbr,
+                      visitorTeam: 'OPP',
+                      homePts: 90,
+                      visitorPts: 100,
+                      status: 'Final',
+                      venue: '',
+                      homeTeamName: entry.team?.displayName || teamAbbr,
+                      visitorTeamName: 'Opponent'
+                    });
+                  }
+                });
+              }
             });
           }
         }
