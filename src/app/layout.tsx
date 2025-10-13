@@ -1,14 +1,7 @@
 "use client";
 import "./globals.css";
-import { useEffect, useState } from "react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<"dark" | "light">("light");
-
-  useEffect(() => {
-    document.body.setAttribute('data-theme', theme);
-  }, [theme]);
-
   return (
     <html lang="en">
       <body>
@@ -29,7 +22,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
+              justifyContent: 'center',
               height: '64px'
             }}>
               {/* NBA Logo + Title */}
@@ -59,29 +52,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </p>
                 </div>
               </div>
-
-              {/* Theme Toggle */}
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  borderRadius: '6px',
-                  color: '#374151',
-                  backgroundColor: 'white',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
-              >
-                {theme === "light" ? "🌙 Dark" : "☀️ Light"}
-              </button>
             </div>
           </div>
         </header>

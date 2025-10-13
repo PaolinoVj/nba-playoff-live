@@ -26,7 +26,16 @@ type Game = {
   startTimeET?: string;
 };
 
-const WEST_TEAMS = ['LAL', 'GSW', 'DEN', 'PHX', 'SAC', 'LAC', 'POR', 'UTA', 'OKC', 'MIN', 'NOP', 'DAL', 'SAS', 'MEM', 'HOU'];
+// MAPPA CONFERENCE CORRETTA
+const WEST_TEAMS = [
+  'LAL', 'GSW', 'DEN', 'PHX', 'SAC', 'LAC', 'POR', 'UTA', 
+  'OKC', 'MIN', 'NOP', 'DAL', 'SAS', 'MEM', 'HOU'
+];
+
+const EAST_TEAMS = [
+  'ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DET', 'IND', 
+  'MIA', 'MIL', 'NYK', 'ORL', 'PHI', 'TOR', 'WAS'
+];
 
 function computeStandingsFromGames(games: Game[]): Team[] {
   const standings: Record<string, Team> = {};
@@ -34,13 +43,17 @@ function computeStandingsFromGames(games: Game[]): Team[] {
   games.forEach(game => {
     [game.homeTeam, game.visitorTeam].forEach(teamAbbr => {
       if (!standings[teamAbbr]) {
+        let conference = 'Unknown';
+        if (WEST_TEAMS.includes(teamAbbr)) conference = 'West';
+        if (EAST_TEAMS.includes(teamAbbr)) conference = 'East';
+        
         standings[teamAbbr] = {
           team: teamAbbr,
           games: 0,
           wins: 0,
           losses: 0,
           pct: 0,
-          conference: WEST_TEAMS.includes(teamAbbr) ? 'West' : 'East'
+          conference
         };
       }
     });
@@ -69,7 +82,6 @@ function computeStandingsFromGames(games: Game[]): Team[] {
 
 export default function HomePage() {
   const [games, setGames] = useState<Game[]>([]);
-  const [recentGames, setRecentGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
 
@@ -79,7 +91,7 @@ export default function HomePage() {
       setError("");
       
       try {
-        const gamesRes = await fetch(`${API_BASE}/games?page=1&pageSize=100&sortBy=date&ascending=false`);
+        const gamesRes = await fetch(`${API_BASE}/games?page=1&pageSize=200&sortBy=date&ascending=false`);
         
         if (!gamesRes.ok) throw new Error(`HTTP ${gamesRes.status}`);
         
@@ -87,7 +99,6 @@ export default function HomePage() {
         const gamesList: Game[] = gamesData.data || [];
         
         setGames(gamesList);
-        setRecentGames(gamesList.slice(0, 20));
         
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -126,10 +137,19 @@ export default function HomePage() {
   );
   
   const standings = computeStandingsFromGames(games.filter(g => !g.isPlayoff));
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayGames = recentGames.filter(game => game.date.startsWith(todayStr));
-  const upcomingGames = recentGames.filter(game => new Date(game.date) > new Date()).slice(0, 6);
-  const finishedGames = recentGames.filter(game => game.homePts > 0 && game.visitorPts > 0).slice(0, 8);
+  
+  // LOGICA DATE CORRETTA
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  
+  const todayGames = games.filter(game => game.date.startsWith(todayStr));
+  const upcomingGames = games.filter(game => {
+    const gameDate = new Date(game.date);
+    return gameDate > now && game.homePts === 0 && game.visitorPts === 0;
+  }).slice(0, 8);
+  const finishedGames = games.filter(game => 
+    game.homePts > 0 && game.visitorPts > 0
+  ).slice(0, 8);
 
   return (
     <div style={{minHeight: '100vh', backgroundColor: '#f8f9fa'}}>
@@ -146,6 +166,23 @@ export default function HomePage() {
 
       <div style={{maxWidth: '1200px', margin: '0 auto', padding: '32px 16px'}}>
         
+        {/* Debug Info */}
+        <div style={{
+          backgroundColor: '#e5e7eb',
+          padding: '12px',
+          borderRadius: '8px',
+          marginBottom: '24px',
+          fontSize: '12px',
+          color: '#374151'
+        }}>
+          Total games: {games.length} | 
+          Today: {todayGames.length} | 
+          Upcoming: {upcomingGames.length} | 
+          Finished: {finishedGames.length} |
+          Standings teams: {standings.length}
+        </div>
+
+        {/* Today's Games */}
         <section style={{marginBottom: '48px'}}>
           <h2 style={{
             fontSize: '24px',
@@ -178,6 +215,7 @@ export default function HomePage() {
           )}
         </section>
 
+        {/* Upcoming Games */}
         <section style={{marginBottom: '48px'}}>
           <h2 style={{
             fontSize: '24px',
@@ -187,17 +225,30 @@ export default function HomePage() {
           }}>
             📅 Upcoming Games
           </h2>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '16px'
-          }}>
-            {upcomingGames.map(game => (
-              <GameCard key={game.gameId} game={game} type="upcoming" />
-            ))}
-          </div>
+          {upcomingGames.length === 0 ? (
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+              padding: '24px',
+              textAlign: 'center'
+            }}>
+              <p style={{color: '#6b7280'}}>No upcoming games found</p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '16px'
+            }}>
+              {upcomingGames.map(game => (
+                <GameCard key={game.gameId} game={game} type="upcoming" />
+              ))}
+            </div>
+          )}
         </section>
 
+        {/* Standings */}
         <section style={{marginBottom: '48px'}}>
           <h2 style={{
             fontSize: '24px',
@@ -209,7 +260,7 @@ export default function HomePage() {
           </h2>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
             gap: '32px'
           }}>
             <div>
@@ -221,7 +272,7 @@ export default function HomePage() {
               }}>
                 Eastern Conference
               </h3>
-              <StandingsTable standings={standings.filter(t => t.conference === 'East').slice(0, 8)} />
+              <StandingsTable standings={standings.filter(t => t.conference === 'East').slice(0, 10)} />
             </div>
             <div>
               <h3 style={{
@@ -232,11 +283,12 @@ export default function HomePage() {
               }}>
                 Western Conference
               </h3>
-              <StandingsTable standings={standings.filter(t => t.conference === 'West').slice(0, 8)} />
+              <StandingsTable standings={standings.filter(t => t.conference === 'West').slice(0, 10)} />
             </div>
           </div>
         </section>
 
+        {/* Recent Results */}
         <section style={{marginBottom: '48px'}}>
           <h2 style={{
             fontSize: '24px',
