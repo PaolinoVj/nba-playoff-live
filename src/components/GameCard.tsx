@@ -1,155 +1,124 @@
-import React from 'react';
-import { teamLogos } from '@/utils/nbaTeamLogos';
-
-type Game = {
-  gameId: string;
-  date: string;
-  homeTeam: string;
-  visitorTeam: string;
-  homePts: number;
-  visitorPts: number;
-  isPlayoff: boolean;
-  arena: string;
-  startTimeET?: string;
+type GameCardProps = {
+  game: {
+    gameId: string;
+    homeTeam: string;
+    visitorTeam: string;
+    homePts: number;
+    visitorPts: number;
+    status: string;
+    broadcast?: string;
+    venue?: string;
+    homeTeamName?: string;
+    visitorTeamName?: string;
+  };
+  type: 'today' | 'upcoming' | 'finished';
 };
 
-interface GameCardProps {
-  game: Game;
-  type: 'today' | 'upcoming' | 'finished';
+// Helper per generare link Google
+function getGoogleSearchLink(homeTeam: string, visitorTeam: string, type: string): string {
+  let query = '';
+  switch(type) {
+    case 'finished':
+      query = `${homeTeam} vs ${visitorTeam} NBA final score recap highlights`;
+      break;
+    case 'today':
+    case 'upcoming':
+      query = `${homeTeam} vs ${visitorTeam} NBA live score stats preview`;
+      break;
+    default:
+      query = `${homeTeam} vs ${visitorTeam} NBA`;
+  }
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=en`;
 }
 
 export default function GameCard({ game, type }: GameCardProps) {
-  const gameDate = new Date(game.date);
-  const isLive = type === 'today' && game.homePts === 0 && game.visitorPts === 0;
-  const homeWin = game.homePts > game.visitorPts;
-  const visitorWin = game.visitorPts > game.homePts;
+  const getStatusColor = () => {
+    switch(type) {
+      case 'finished': return '#059669';
+      case 'today': return '#dc2626';
+      case 'upcoming': return '#d97706';
+      default: return '#6b7280';
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch(type) {
+      case 'finished': return '✅';
+      case 'today': return '🔴';
+      case 'upcoming': return '⏰';
+      default: return '📅';
+    }
+  };
 
   return (
     <div style={{
       backgroundColor: 'white',
       borderRadius: '8px',
+      padding: '16px',
       boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-      overflow: 'hidden',
-      transition: 'box-shadow 0.2s',
-      cursor: 'pointer'
+      border: type === 'today' ? '1px solid #ef4444' : '1px solid #e5e7eb'
     }}>
-      {/* Header */}
-      <div style={{
-        padding: '12px 16px',
-        backgroundColor: '#f9fafb',
-        borderBottom: '1px solid #e5e7eb',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <span style={{fontSize: '12px', color: '#6b7280'}}>
-          {gameDate.toLocaleDateString()}
+      {/* Header con status e link Google */}
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
+        <span style={{
+          color: getStatusColor(),
+          fontWeight: '500',
+          fontSize: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
+        }}>
+          {getStatusIcon()} {game.status}
         </span>
-        {isLive && (
-          <span style={{
-            backgroundColor: '#ef4444',
+        <a 
+          href={getGoogleSearchLink(
+            game.homeTeamName || game.homeTeam,
+            game.visitorTeamName || game.visitorTeam,
+            type
+          )}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            backgroundColor: '#4285f4',
             color: 'white',
             padding: '4px 8px',
-            borderRadius: '12px',
-            fontSize: '10px',
-            fontWeight: '500'
-          }}>
-            LIVE
-          </span>
-        )}
-        {type === 'upcoming' && game.startTimeET && (
-          <span style={{fontSize: '12px', color: '#6b7280'}}>
-            {game.startTimeET}
-          </span>
-        )}
-        {game.isPlayoff && (
-          <span style={{
-            backgroundColor: '#fef3c7',
-            color: '#92400e',
-            padding: '4px 8px',
             borderRadius: '4px',
-            fontSize: '10px',
+            fontSize: '12px',
+            textDecoration: 'none',
             fontWeight: '500'
-          }}>
-            PLAYOFF
-          </span>
-        )}
+          }}
+        >
+          {type === 'finished' ? '📊 Recap' : '📈 Stats'}
+        </a>
       </div>
-
-      {/* Teams */}
-      <div style={{padding: '16px'}}>
-        {/* Visitor Team */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '12px',
-          paddingBottom: '12px',
-          borderBottom: '1px solid #f3f4f6',
-          fontWeight: visitorWin && type === 'finished' ? '600' : 'normal'
-        }}>
-          <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-            <img 
-              src={teamLogos[game.visitorTeam] || "/favicon.jpg"} 
-              alt={game.visitorTeam} 
-              style={{width: '32px', height: '32px', objectFit: 'contain'}}
-            />
-            <span style={{fontWeight: '500', color: '#1f2937'}}>
-              {game.visitorTeam}
-            </span>
-          </div>
+      
+      {/* Teams e Score */}
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
+        <div style={{textAlign: 'center', flex: 1}}>
+          <p style={{fontWeight: '600', fontSize: '16px', margin: '0 0 4px 0'}}>{game.visitorTeam}</p>
           {type === 'finished' && (
-            <span style={{
-              fontSize: '18px',
-              fontWeight: 'bold',
-              color: visitorWin ? '#1f2937' : '#9ca3af'
-            }}>
-              {game.visitorPts}
-            </span>
+            <p style={{fontSize: '20px', fontWeight: 'bold', margin: 0}}>{game.visitorPts}</p>
           )}
         </div>
-
-        {/* Home Team */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontWeight: homeWin && type === 'finished' ? '600' : 'normal'
-        }}>
-          <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-            <img 
-              src={teamLogos[game.homeTeam] || "/favicon.jpg"} 
-              alt={game.homeTeam} 
-              style={{width: '32px', height: '32px', objectFit: 'contain'}}
-            />
-            <span style={{fontWeight: '500', color: '#1f2937'}}>
-              {game.homeTeam}
-            </span>
-          </div>
+        <div style={{fontSize: '16px', color: '#666', margin: '0 16px'}}>
+          {type === 'finished' ? 'vs' : '@'}
+        </div>
+        <div style={{textAlign: 'center', flex: 1}}>
+          <p style={{fontWeight: '600', fontSize: '16px', margin: '0 0 4px 0'}}>{game.homeTeam}</p>
           {type === 'finished' && (
-            <span style={{
-              fontSize: '18px',
-              fontWeight: 'bold',
-              color: homeWin ? '#1f2937' : '#9ca3af'
-            }}>
-              {game.homePts}
-            </span>
+            <p style={{fontSize: '20px', fontWeight: 'bold', margin: 0}}>{game.homePts}</p>
           )}
         </div>
       </div>
-
-      {/* Footer */}
-      <div style={{
-        padding: '8px 16px',
-        backgroundColor: '#f9fafb',
-        fontSize: '12px',
-        color: '#6b7280',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap'
-      }}>
-        {game.arena}
-      </div>
+      
+      {/* Footer Info */}
+      {(game.venue || game.broadcast) && (
+        <div style={{fontSize: '12px', color: '#666', textAlign: 'center', marginTop: '8px'}}>
+          {game.venue && `🏟️ ${game.venue}`}
+          {game.venue && game.broadcast && ' • '}
+          {game.broadcast && `📺 ${game.broadcast}`}
+        </div>
+      )}
     </div>
   );
 }

@@ -5,7 +5,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        {/* NBA Header */}
         <header style={{
           backgroundColor: 'white',
           boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
@@ -22,10 +21,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: 'space-between',
               height: '64px'
             }}>
-              {/* NBA Logo + Title */}
+              {/* NBA Logo + Title (left) */}
               <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
                 <img
                   src="https://logoeps.com/wp-content/uploads/2013/03/nba-vector-logo.png"
@@ -40,7 +39,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     margin: 0,
                     lineHeight: 1
                   }}>
-                    NBA 2024-25
+                    NBA 2024-25 Live
                   </h1>
                   <p style={{
                     fontSize: '14px',
@@ -48,16 +47,46 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     margin: 0,
                     lineHeight: 1
                   }}>
-                    Live Stats & Scores
+                    Scores & Schedules
                   </p>
                 </div>
+              </div>
+              
+              {/* Live indicator (right) */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor: '#ef4444',
+                color: 'white',
+                padding: '4px 12px',
+                borderRadius: '20px',
+                fontSize: '12px',
+                fontWeight: '600'
+              }}>
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  backgroundColor: 'white',
+                  borderRadius: '50%',
+                  animation: 'pulse 2s infinite'
+                }}></div>
+                LIVE
               </div>
             </div>
           </div>
         </header>
 
-        {/* Main Content */}
         <main>{children}</main>
+
+        {/* CSS Animation */}
+        <style jsx>{`
+          @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+          }
+        `}</style>
       </body>
     </html>
   );

@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import StandingsTable from '@/components/StandingsTable';
 import GameCard from '@/components/GameCard';
 
-const API_BASE = "https://api.server.nbaapi.com/api";
+// ESPN API (funziona!)
+const ESPN_API = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba";
 
 type Team = {
   team: string;
@@ -21,12 +22,14 @@ type Game = {
   visitorTeam: string;
   homePts: number;
   visitorPts: number;
-  isPlayoff: boolean;
-  arena: string;
-  startTimeET?: string;
+  status: string;
+  venue: string;
+  broadcast?: string;
+  homeTeamName?: string;
+  visitorTeamName?: string;
 };
 
-// MAPPA CONFERENCE CORRETTA
+// Conference mapping CORRETTA
 const WEST_TEAMS = [
   'LAL', 'GSW', 'DEN', 'PHX', 'SAC', 'LAC', 'POR', 'UTA', 
   'OKC', 'MIN', 'NOP', 'DAL', 'SAS', 'MEM', 'HOU'
@@ -37,37 +40,48 @@ const EAST_TEAMS = [
   'MIA', 'MIL', 'NYK', 'ORL', 'PHI', 'TOR', 'WAS'
 ];
 
+// Helper per generare link Google
+function getGoogleSearchLink(homeTeam: string, visitorTeam: string): string {
+  return `https://www.google.com/search?q=${encodeURIComponent(`${homeTeam} vs ${visitorTeam} NBA live score stats`)}&hl=en`;
+}
+
 function computeStandingsFromGames(games: Game[]): Team[] {
   const standings: Record<string, Team> = {};
   
   games.forEach(game => {
     [game.homeTeam, game.visitorTeam].forEach(teamAbbr => {
-      if (!standings[teamAbbr]) {
-        let conference = 'Unknown';
-        if (WEST_TEAMS.includes(teamAbbr)) conference = 'West';
-        if (EAST_TEAMS.includes(teamAbbr)) conference = 'East';
-        
+      if (!standings[teamAbbr] && (WEST_TEAMS.includes(teamAbbr) || EAST_TEAMS.includes(teamAbbr))) {
         standings[teamAbbr] = {
           team: teamAbbr,
           games: 0,
           wins: 0,
           losses: 0,
           pct: 0,
-          conference
+          conference: WEST_TEAMS.includes(teamAbbr) ? 'West' : 'East'
         };
       }
     });
     
-    if (game.homePts > 0 || game.visitorPts > 0) {
-      standings[game.homeTeam].games++;
-      standings[game.visitorTeam].games++;
+    if (game.homePts > 0 && game.visitorPts > 0) {
+      const homeAbbr = game.homeTeam;
+      const visitorAbbr = game.visitorTeam;
       
-      if (game.homePts > game.visitorPts) {
-        standings[game.homeTeam].wins++;
-        standings[game.visitorTeam].losses++;
-      } else if (game.visitorPts > game.homePts) {
-        standings[game.visitorTeam].wins++;
-        standings[game.homeTeam].losses++;
+      if (standings[homeAbbr]) {
+        standings[homeAbbr].games++;
+        if (game.homePts > game.visitorPts) {
+          standings[homeAbbr].wins++;
+        } else {
+          standings[homeAbbr].losses++;
+        }
+      }
+      
+      if (standings[visitorAbbr]) {
+        standings[visitorAbbr].games++;
+        if (game.visitorPts > game.homePts) {
+          standings[visitorAbbr].wins++;
+        } else {
+          standings[visitorAbbr].losses++;
+        }
       }
     }
   });
@@ -86,31 +100,89 @@ export default function HomePage() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchESPNData() {
       setLoading(true);
       setError("");
       
       try {
-        const gamesRes = await fetch(`${API_BASE}/games?page=1&pageSize=200&sortBy=date&ascending=false`);
+        // Fetch oggi
+        const todayRes = await fetch(`${ESPN_API}/scoreboard`);
+        // Fetch domani  
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0].replace(/-/g, '');
+        const upcomingRes = await fetch(`${ESPN_API}/scoreboard?dates=${tomorrowStr}`);
         
-        if (!gamesRes.ok) throw new Error(`HTTP ${gamesRes.status}`);
+        if (!todayRes.ok && !upcomingRes.ok) {
+          throw new Error('ESPN API non disponibile');
+        }
         
-        const gamesData = await gamesRes.json();
-        const gamesList: Game[] = gamesData.data || [];
+        const allGames: Game[] = [];
         
-        setGames(gamesList);
+        // Process today's games
+        if (todayRes.ok) {
+          const todayData = await todayRes.json();
+          if (todayData.events) {
+            todayData.events.forEach((event: any) => {
+              const comp = event.competitions[0];
+              const homeTeam = comp.competitors.find((c: any) => c.homeAway === 'home');
+              const awayTeam = comp.competitors.find((c: any) => c.homeAway === 'away');
+              
+              allGames.push({
+                gameId: event.id,
+                date: event.date,
+                homeTeam: homeTeam?.team?.abbreviation || '',
+                visitorTeam: awayTeam?.team?.abbreviation || '',
+                homeTeamName: homeTeam?.team?.displayName || '',
+                visitorTeamName: awayTeam?.team?.displayName || '',
+                homePts: parseInt(homeTeam?.score || '0'),
+                visitorPts: parseInt(awayTeam?.score || '0'),
+                status: comp.status.type.description || '',
+                venue: comp.venue?.fullName || '',
+                broadcast: comp.broadcasts?.[0]?.names?.[0] || event.broadcast
+              });
+            });
+          }
+        }
         
-      } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        setError(`API Error: ${errorMessage}`);
-        console.error("NBA API Error:", err);
+        // Process upcoming games  
+        if (upcomingRes.ok) {
+          const upcomingData = await upcomingRes.json();
+          if (upcomingData.events) {
+            upcomingData.events.forEach((event: any) => {
+              const comp = event.competitions[0];
+              const homeTeam = comp.competitors.find((c: any) => c.homeAway === 'home');
+              const awayTeam = comp.competitors.find((c: any) => c.homeAway === 'away');
+              
+              allGames.push({
+                gameId: event.id,
+                date: event.date,
+                homeTeam: homeTeam?.team?.abbreviation || '',
+                visitorTeam: awayTeam?.team?.abbreviation || '',
+                homeTeamName: homeTeam?.team?.displayName || '',
+                visitorTeamName: awayTeam?.team?.displayName || '',
+                homePts: parseInt(homeTeam?.score || '0'),
+                visitorPts: parseInt(awayTeam?.score || '0'),
+                status: comp.status.type.description || '',
+                venue: comp.venue?.fullName || '',
+                broadcast: comp.broadcasts?.[0]?.names?.[0] || event.broadcast
+              });
+            });
+          }
+        }
+        
+        setGames(allGames);
+        
+      } catch (err: any) {
+        setError(err.message);
+        console.error("ESPN API Error:", err);
       }
       
       setLoading(false);
     }
 
-    fetchData();
-    const interval = setInterval(fetchData, 600000);
+    fetchESPNData();
+    const interval = setInterval(fetchESPNData, 300000); // 5 minuti
     return () => clearInterval(interval);
   }, []);
 
@@ -127,28 +199,38 @@ export default function HomePage() {
         width: '40px',
         height: '40px',
         border: '3px solid #f3f3f3',
-        borderTop: '3px solid #333',
+        borderTop: '3px solid #ef4444',
         borderRadius: '50%',
         animation: 'spin 1s linear infinite',
         marginBottom: '16px'
       }}></div>
-      <p style={{color: '#666'}}>Loading NBA data...</p>
+      <p style={{color: '#666', fontSize: '18px'}}>Loading NBA Live Data...</p>
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
   
-  const standings = computeStandingsFromGames(games.filter(g => !g.isPlayoff));
-  
-  // LOGICA DATE CORRETTA
+  const standings = computeStandingsFromGames(games);
   const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
   
-  const todayGames = games.filter(game => game.date.startsWith(todayStr));
-  const upcomingGames = games.filter(game => {
-    const gameDate = new Date(game.date);
-    return gameDate > now && game.homePts === 0 && game.visitorPts === 0;
+  // Filtri partite
+  const liveGames = games.filter(g => 
+    g.status.includes('Quarter') || g.status.includes('Half') || g.status === 'In Progress'
+  );
+  const todayGames = games.filter(g => {
+    const gameDate = new Date(g.date);
+    return gameDate.toDateString() === now.toDateString();
+  });
+  const upcomingGames = games.filter(g => {
+    const gameDate = new Date(g.date);
+    return gameDate > now && g.homePts === 0 && g.visitorPts === 0;
   }).slice(0, 8);
-  const finishedGames = games.filter(game => 
-    game.homePts > 0 && game.visitorPts > 0
+  const finishedGames = games.filter(g => 
+    (g.homePts > 0 && g.visitorPts > 0) || g.status === 'Final'
   ).slice(0, 8);
 
   return (
@@ -160,27 +242,87 @@ export default function HomePage() {
           padding: '16px',
           marginBottom: '24px'
         }}>
-          <p style={{color: '#b91c1c'}}>⚠️ {error}</p>
+          <p style={{color: '#b91c1c', margin: 0}}>⚠️ {error}</p>
         </div>
       )}
 
       <div style={{maxWidth: '1200px', margin: '0 auto', padding: '32px 16px'}}>
         
-        {/* Debug Info */}
-        <div style={{
-          backgroundColor: '#e5e7eb',
-          padding: '12px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          fontSize: '12px',
-          color: '#374151'
-        }}>
-          Total games: {games.length} | 
-          Today: {todayGames.length} | 
-          Upcoming: {upcomingGames.length} | 
-          Finished: {finishedGames.length} |
-          Standings teams: {standings.length}
-        </div>
+        {/* Live Games - Priorità massima */}
+        {liveGames.length > 0 && (
+          <section style={{marginBottom: '48px'}}>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: 'bold',
+              color: '#ef4444',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              🔴 LIVE NOW
+              <span style={{
+                fontSize: '14px',
+                backgroundColor: '#ef4444',
+                color: 'white',
+                padding: '4px 8px',
+                borderRadius: '12px'
+              }}>
+                {liveGames.length}
+              </span>
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '20px'
+            }}>
+              {liveGames.map(game => (
+                <div key={game.gameId} style={{
+                  backgroundColor: 'white',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  border: '2px solid #ef4444'
+                }}>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
+                    <span style={{color: '#ef4444', fontWeight: '600', fontSize: '14px'}}>{game.status}</span>
+                    <a 
+                      href={getGoogleSearchLink(game.homeTeamName || game.homeTeam, game.visitorTeamName || game.visitorTeam)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        backgroundColor: '#4285f4',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      📊 Stats
+                    </a>
+                  </div>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <div style={{textAlign: 'center', flex: 1}}>
+                      <p style={{fontWeight: '600', fontSize: '16px', margin: '0 0 4px 0'}}>{game.visitorTeam}</p>
+                      <p style={{fontSize: '24px', fontWeight: 'bold', margin: 0}}>{game.visitorPts}</p>
+                    </div>
+                    <div style={{fontSize: '20px', color: '#666', margin: '0 16px'}}>@</div>
+                    <div style={{textAlign: 'center', flex: 1}}>
+                      <p style={{fontWeight: '600', fontSize: '16px', margin: '0 0 4px 0'}}>{game.homeTeam}</p>
+                      <p style={{fontSize: '24px', fontWeight: 'bold', margin: 0}}>{game.homePts}</p>
+                    </div>
+                  </div>
+                  {game.broadcast && (
+                    <p style={{textAlign: 'center', fontSize: '12px', color: '#666', marginTop: '12px', margin: 0}}>
+                      📺 {game.broadcast}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Today's Games */}
         <section style={{marginBottom: '48px'}}>
@@ -190,7 +332,7 @@ export default function HomePage() {
             color: '#1f2937',
             marginBottom: '24px'
           }}>
-            🔴 Today&apos;s Games
+            📅 Today&apos;s Schedule ({todayGames.length})
           </h2>
           {todayGames.length === 0 ? (
             <div style={{
@@ -200,12 +342,12 @@ export default function HomePage() {
               padding: '24px',
               textAlign: 'center'
             }}>
-              <p style={{color: '#6b7280'}}>No games scheduled for today</p>
+              <p style={{color: '#6b7280', margin: 0}}>No games scheduled for today</p>
             </div>
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
               gap: '16px'
             }}>
               {todayGames.map(game => (
@@ -223,7 +365,7 @@ export default function HomePage() {
             color: '#1f2937',
             marginBottom: '24px'
           }}>
-            📅 Upcoming Games
+            ⏰ Upcoming Games ({upcomingGames.length})
           </h2>
           {upcomingGames.length === 0 ? (
             <div style={{
@@ -233,7 +375,7 @@ export default function HomePage() {
               padding: '24px',
               textAlign: 'center'
             }}>
-              <p style={{color: '#6b7280'}}>No upcoming games found</p>
+              <p style={{color: '#6b7280', margin: 0}}>No upcoming games found</p>
             </div>
           ) : (
             <div style={{
@@ -242,7 +384,41 @@ export default function HomePage() {
               gap: '16px'
             }}>
               {upcomingGames.map(game => (
-                <GameCard key={game.gameId} game={game} type="upcoming" />
+                <div key={game.gameId} style={{
+                  backgroundColor: 'white',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                }}>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
+                    <span style={{color: '#059669', fontWeight: '500', fontSize: '14px'}}>{game.status}</span>
+                    <a 
+                      href={getGoogleSearchLink(game.homeTeamName || game.homeTeam, game.visitorTeamName || game.visitorTeam)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        backgroundColor: '#4285f4',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      📊 Preview
+                    </a>
+                  </div>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <span style={{fontWeight: '600', fontSize: '16px'}}>{game.visitorTeam}</span>
+                    <span style={{color: '#666', fontSize: '14px'}}>@</span>
+                    <span style={{fontWeight: '600', fontSize: '16px'}}>{game.homeTeam}</span>
+                  </div>
+                  <div style={{textAlign: 'center', marginTop: '8px'}}>
+                    <p style={{fontSize: '12px', color: '#666', margin: 0}}>
+                      🏟️ {game.venue} {game.broadcast && `• 📺 ${game.broadcast}`}
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -256,7 +432,7 @@ export default function HomePage() {
             color: '#1f2937',
             marginBottom: '24px'
           }}>
-            📊 Conference Standings
+            🏆 Conference Standings
           </h2>
           <div style={{
             display: 'grid',
@@ -296,7 +472,7 @@ export default function HomePage() {
             color: '#1f2937',
             marginBottom: '24px'
           }}>
-            📈 Recent Results
+            📈 Recent Results ({finishedGames.length})
           </h2>
           <div style={{
             display: 'grid',
@@ -317,7 +493,7 @@ export default function HomePage() {
         textAlign: 'center'
       }}>
         <div style={{fontSize: '14px', color: '#6b7280'}}>
-          Data provided by <span style={{fontWeight: '500', color: '#1f2937'}}>NBA API</span> - Updated every 10 minutes
+          Data provided by <span style={{fontWeight: '500', color: '#1f2937'}}>ESPN API</span> - Updated every 5 minutes
         </div>
       </footer>
     </div>
