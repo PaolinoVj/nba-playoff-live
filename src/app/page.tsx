@@ -105,11 +105,24 @@ export default function HomePage() {
   }, []);
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading NBA data...</p>
-      </div>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#f8f9fa',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'column'
+    }}>
+      <div style={{
+        width: '40px',
+        height: '40px',
+        border: '3px solid #f3f3f3',
+        borderTop: '3px solid #333',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+        marginBottom: '16px'
+      }}></div>
+      <p style={{color: '#666'}}>Loading NBA data...</p>
     </div>
   );
   
@@ -120,32 +133,48 @@ export default function HomePage() {
   const finishedGames = recentGames.filter(game => game.homePts > 0 && game.visitorPts > 0).slice(0, 8);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{minHeight: '100vh', backgroundColor: '#f8f9fa'}}>
       {/* Error Banner */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-          <div className="flex">
-            <div className="ml-3">
-              <p className="text-red-700">⚠️ {error}</p>
-            </div>
-          </div>
+        <div style={{
+          backgroundColor: '#fef2f2',
+          borderLeft: '4px solid #f87171',
+          padding: '16px',
+          marginBottom: '24px'
+        }}>
+          <p style={{color: '#b91c1c'}}>⚠️ {error}</p>
         </div>
       )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div style={{maxWidth: '1200px', margin: '0 auto', padding: '32px 16px'}}>
         
         {/* Today's Games */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+        <section style={{marginBottom: '48px'}}>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#1f2937',
+            marginBottom: '24px'
+          }}>
             🔴 Today's Games
           </h2>
           {todayGames.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-              <p className="text-gray-500">No games scheduled for today</p>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+              padding: '24px',
+              textAlign: 'center'
+            }}>
+              <p style={{color: '#6b7280'}}>No games scheduled for today</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '16px'
+            }}>
               {todayGames.map(game => (
                 <GameCard key={game.gameId} game={game} type="today" />
               ))}
@@ -154,11 +183,20 @@ export default function HomePage() {
         </section>
 
         {/* Upcoming Games */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+        <section style={{marginBottom: '48px'}}>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#1f2937',
+            marginBottom: '24px'
+          }}>
             📅 Upcoming Games
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '16px'
+          }}>
             {upcomingGames.map(game => (
               <GameCard key={game.gameId} game={game} type="upcoming" />
             ))}
@@ -166,26 +204,60 @@ export default function HomePage() {
         </section>
 
         {/* Standings */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 Conference Standings</h2>
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <section style={{marginBottom: '48px'}}>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#1f2937',
+            marginBottom: '24px'
+          }}>
+            📊 Conference Standings
+          </h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr',
+            gap: '32px'
+          }}>
             <div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Eastern Conference</h3>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#4b5563',
+                marginBottom: '16px'
+              }}>
+                Eastern Conference
+              </h3>
               <StandingsTable standings={standings.filter(t => t.conference === 'East').slice(0, 8)} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Western Conference</h3>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#4b5563',
+                marginBottom: '16px'
+              }}>
+                Western Conference
+              </h3>
               <StandingsTable standings={standings.filter(t => t.conference === 'West').slice(0, 8)} />
             </div>
           </div>
         </section>
 
         {/* Recent Results */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+        <section style={{marginBottom: '48px'}}>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#1f2937',
+            marginBottom: '24px'
+          }}>
             📈 Recent Results
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '16px'
+          }}>
             {finishedGames.map(game => (
               <GameCard key={game.gameId} game={game} type="finished" />
             ))}
@@ -194,12 +266,15 @@ export default function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center text-sm text-gray-500">
-            Data provided by <span className="font-medium text-gray-900">NBA API</span> • 
-            Updated every 10 minutes
-          </div>
+      <footer style={{
+        backgroundColor: 'white',
+        borderTop: '1px solid #e5e7eb',
+        padding: '24px 16px',
+        textAlign: 'center'
+      }}>
+        <div style={{fontSize: '14px', color: '#6b7280'}}>
+          Data provided by <span style={{fontWeight: '500', color: '#1f2937'}}>NBA API</span> • 
+          Updated every 10 minutes
         </div>
       </footer>
     </div>

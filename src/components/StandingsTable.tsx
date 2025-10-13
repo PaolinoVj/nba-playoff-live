@@ -12,49 +12,113 @@ type TeamStanding = {
 
 export default function StandingsTable({ standings }: { standings: TeamStanding[] }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div style={{
+      backgroundColor: 'white',
+      borderRadius: '8px',
+      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+      overflow: 'hidden'
+    }}>
+      <table style={{width: '100%', borderCollapse: 'collapse'}}>
+        <thead style={{backgroundColor: '#f9fafb'}}>
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th style={{
+              padding: '12px 16px',
+              textAlign: 'left',
+              fontSize: '12px',
+              fontWeight: '500',
+              color: '#6b7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
               Team
             </th>
-            <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th style={{
+              padding: '12px',
+              textAlign: 'center',
+              fontSize: '12px',
+              fontWeight: '500',
+              color: '#6b7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
               W
             </th>
-            <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th style={{
+              padding: '12px',
+              textAlign: 'center',
+              fontSize: '12px',
+              fontWeight: '500',
+              color: '#6b7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
               L
             </th>
-            <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th style={{
+              padding: '12px',
+              textAlign: 'center',
+              fontSize: '12px',
+              fontWeight: '500',
+              color: '#6b7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
               PCT
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody style={{backgroundColor: 'white'}}>
           {standings.map((st, index) => (
-            <tr key={st.team} className="hover:bg-gray-50 transition-colors duration-150">
-              <td className="px-4 py-3 whitespace-nowrap">
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm font-medium text-gray-500 w-6">
+            <tr key={st.team} style={{borderBottom: '1px solid #f3f4f6'}}>
+              <td style={{padding: '12px 16px'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                  <span style={{
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    minWidth: '24px'
+                  }}>
                     {index + 1}
                   </span>
                   <img 
                     src={teamLogos[st.team] || "/favicon.jpg"} 
                     alt={st.team} 
-                    className="w-6 h-6 object-contain"
+                    style={{width: '24px', height: '24px', objectFit: 'contain'}}
                   />
-                  <span className="text-sm font-medium text-gray-900">
+                  <span style={{
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#1f2937'
+                  }}>
                     {st.team}
                   </span>
                 </div>
               </td>
-              <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium text-gray-900">
+              <td style={{
+                padding: '12px',
+                textAlign: 'center',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#1f2937'
+              }}>
                 {st.wins}
               </td>
-              <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium text-gray-900">
+              <td style={{
+                padding: '12px',
+                textAlign: 'center',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#1f2937'
+              }}>
                 {st.losses}
               </td>
-              <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium text-gray-900">
+              <td style={{
+                padding: '12px',
+                textAlign: 'center',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#1f2937'
+              }}>
                 {st.pct.toFixed(3)}
               </td>
             </tr>
