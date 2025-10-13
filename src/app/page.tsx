@@ -29,16 +29,17 @@ type Game = {
   visitorTeamName?: string;
 };
 
-// Conference mapping CORRETTA
+// Conference mapping CORRETTA - AGGIORNATA
 const WEST_TEAMS = [
-  'LAL', 'GS', 'DEN', 'PHX', 'SAC', 'LAC', 'POR', 'UTA', 
-  'OKC', 'MIN', 'NOP', 'DAL', 'SA', 'MEM', 'HOU'
+  'LAL', 'GSW', 'DEN', 'PHX', 'SAC', 'LAC', 'POR', 'UTA', 
+  'OKC', 'MIN', 'NOP', 'DAL', 'SAS', 'MEM', 'HOU'
 ];
 
 const EAST_TEAMS = [
   'ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DET', 'IND', 
-  'MIA', 'MIL', 'NY', 'ORL', 'PHI', 'TOR', 'WSH'
+  'MIA', 'MIL', 'NYK', 'ORL', 'PHI', 'TOR', 'WSH'
 ];
+
 
 // Helper per generare link Google - VERSIONE SEMPLIFICATA
 function getGoogleSearchLink(homeTeam: string, visitorTeam: string): string {
@@ -50,9 +51,9 @@ const generateRealisticMatchups = () => {
   const matchups: Array<{team1: string, team2: string, team1Wins: boolean}> = [
     // Eastern Conference matchups realistici
     { team1: 'BOS', team2: 'MIA', team1Wins: true },
-    { team1: 'BOS', team2: 'NY', team1Wins: true },
-    { team1: 'NY', team2: 'ATL', team1Wins: true },
-    { team1: 'NY', team2: 'CLE', team1Wins: false },
+    { team1: 'BOS', team2: 'NYK', team1Wins: true },
+    { team1: 'NYK', team2: 'ATL', team1Wins: true },
+    { team1: 'NYK', team2: 'CLE', team1Wins: false },
     { team1: 'ORL', team2: 'MIA', team1Wins: true },
     { team1: 'ORL', team2: 'CHI', team1Wins: true },
     { team1: 'IND', team2: 'DET', team1Wins: true },
@@ -69,9 +70,9 @@ const generateRealisticMatchups = () => {
     { team1: 'MIA', team2: 'TOR', team1Wins: false },
     
     // Western Conference matchups realistici  
-    { team1: 'SA', team2: 'HOU', team1Wins: true },
-    { team1: 'SA', team2: 'UTA', team1Wins: true },
-    { team1: 'SA', team2: 'MEM', team1Wins: true },
+    { team1: 'SAS', team2: 'HOU', team1Wins: true },
+    { team1: 'SAS', team2: 'UTA', team1Wins: true },
+    { team1: 'SAS', team2: 'MEM', team1Wins: true },
     { team1: 'NOP', team2: 'LAL', team1Wins: true },
     { team1: 'NOP', team2: 'POR', team1Wins: true },
     { team1: 'HOU', team2: 'MEM', team1Wins: true },
@@ -79,10 +80,10 @@ const generateRealisticMatchups = () => {
     { team1: 'DEN', team2: 'DAL', team1Wins: true },
     { team1: 'DEN', team2: 'MIN', team1Wins: false },
     { team1: 'PHX', team2: 'LAL', team1Wins: true },
-    { team1: 'PHX', team2: 'GS', team1Wins: true },
+    { team1: 'PHX', team2: 'GSW', team1Wins: true },
     { team1: 'LAC', team2: 'SAC', team1Wins: true },
     { team1: 'LAC', team2: 'POR', team1Wins: true },
-    { team1: 'GS', team2: 'MIN', team1Wins: false },
+    { team1: 'GSW', team2: 'MIN', team1Wins: false },
     { team1: 'SAC', team2: 'OKC', team1Wins: false },
     { team1: 'OKC', team2: 'UTA', team1Wins: true },
     { team1: 'OKC', team2: 'MEM', team1Wins: false },
@@ -228,7 +229,7 @@ export default function HomePage() {
         const currentSeasonRecords = {
           // Eastern Conference - Record ATTUALI 2025-26 (Preseason + Regular Season start)
           'BOS': { wins: 2, losses: 0 },
-          'NY': { wins: 2, losses: 1 },
+          'NYK': { wins: 2, losses: 1 },
           'ORL': { wins: 2, losses: 0 },
           'CLE': { wins: 1, losses: 1 },
           'MIA': { wins: 0, losses: 4 }, // Come mostrato nella tua immagine Google
@@ -252,12 +253,12 @@ export default function HomePage() {
           'PHX': { wins: 2, losses: 1 },
           'NOP': { wins: 2, losses: 0 },
           'LAL': { wins: 1, losses: 2 },
-          'GS': { wins: 2, losses: 1 },
+          'GSW': { wins: 2, losses: 1 },
           'SAC': { wins: 2, losses: 1 },
           'HOU': { wins: 2, losses: 0 },
           'UTA': { wins: 0, losses: 2 },
           'MEM': { wins: 1, losses: 2 },
-          'SA': { wins: 3, losses: 0 },
+          'SAS': { wins: 3, losses: 0 },
           'POR': { wins: 1, losses: 1 }
         };
 
