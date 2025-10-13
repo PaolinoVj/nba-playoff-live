@@ -1,174 +1,154 @@
-'use client'
+"use client";
+import { useEffect, useState } from "react";
+import StandingsTable from '@/components/StandingsTable';
+import { teamLogos } from "@/utils/nbaTeamLogos";
 
-import { useEffect, useState } from "react"
-import Image from "next/image"
-import LiveCountdownCard from "@/components/LiveCountdownCard"
-import aliasMap from "@/utils/aliasMap"
+const TEAMS_ENDPOINT = "https://api.balldontlie.io/v1/teams";
+const GAMES_ENDPOINT = "https://api.balldontlie.io/v1/games";
+const SEASON = 2024;
 
-interface Game {
-  teamA: string
-  teamB: string
-  dateTime: string
-  status?: string
-  series?: string
-  game?: string
-  result?: string
+type Game = {
+  id: number;
+  home_team: { id: number; full_name: string; conference: string };
+  visitor_team: { id: number; full_name: string; conference: string };
+  home_team_score: number;
+  visitor_team_score: number;
+  status: string;
+  date: string;
+};
+
+type TeamStanding = {
+  team: string;
+  wins: number;
+  losses: number;
+  pct: number;
+  conference: string;
+};
+
+function computeStandings(games: Game[]): TeamStanding[] {
+  const standings: Record<string, TeamStanding> = {};
+  for (const g of games) {
+    if (!standings[g.home_team.full_name]) {
+      standings[g.home_team.full_name] = {
+        team: g.home_team.full_name,
+        wins: 0, losses: 0, pct: 0, conference: g.home_team.conference
+      };
+    }
+    if (!standings[g.visitor_team.full_name]) {
+      standings[g.visitor_team.full_name] = {
+        team: g.visitor_team.full_name,
+        wins: 0, losses: 0, pct: 0, conference: g.visitor_team.conference
+      };
+    }
+    if (g.status === "Final") {
+      if (g.home_team_score > g.visitor_team_score) {
+        standings[g.home_team.full_name].wins++;
+        standings[g.visitor_team.full_name].losses++;
+      } else if (g.home_team_score < g.visitor_team_score) {
+        standings[g.visitor_team.full_name].wins++;
+        standings[g.home_team.full_name].losses++;
+      }
+    }
+  }
+  Object.values(standings).forEach(t => {
+    const total = t.wins + t.losses;
+    t.pct = total > 0 ? t.wins / total : 0;
+  });
+  return Object.values(standings).sort((a, b) => b.pct - a.pct);
 }
 
-const teams = ["thunder", "pacers", "knicks", "timberwolves"]
-
 export default function HomePage() {
-  const [seriesMap, setSeriesMap] = useState<Record<string, string>>({})
-  const [pastGames, setPastGames] = useState<Game[]>([])
-  const [showModal, setShowModal] = useState(false)
-  const [highlightedTeam, setHighlightedTeam] = useState<string | null>(null)
+  const [teams, setTeams] = useState<any[]>([]);
+  const [gamesToday, setGamesToday] = useState<Game[]>([]);
+  const [recentResults, setRecentResults] = useState<Game[]>([]);
+  const [allGames, setAllGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/playoffs-2025-extended.json")
-      .then((res) => res.json())
-      .then((games: Game[]) => {
-        const currentSeries: Record<string, string> = {}
-        const playedGames: Game[] = []
-        const now = Date.now()
+    async function fetchAll() {
+      setLoading(true);
+      try {
+        // Squadre
+        const teamsResp = await fetch(TEAMS_ENDPOINT);
+        setTeams((await teamsResp.json()).data);
+        // Partite di oggi
+        const todayStr = new Date().toISOString().split("T")[0];
+        const gamesResp = await fetch(`${GAMES_ENDPOINT}?dates[]=${todayStr}&season=${SEASON}&per_page=25`);
+        setGamesToday((await gamesResp.json()).data);
+        // Ultimi risultati
+        const recentResp = await fetch(`${GAMES_ENDPOINT}?season=${SEASON}&end_date=${todayStr}&per_page=10`);
+        setRecentResults((await recentResp.json()).data);
+        // Tutte le partite della stagione (prima 100, paginabile all’occorrenza)
+        const allResp = await fetch(`${GAMES_ENDPOINT}?season=${SEASON}&per_page=100`);
+        setAllGames((await allResp.json()).data);
+      } catch (e) { console.error("Errore API NBA:", e); }
+      setLoading(false);
+    }
+    fetchAll();
+    const interval = setInterval(fetchAll, 600000);
+    return () => clearInterval(interval);
+  }, []);
 
-        let nextGame: Game | null = null
-
-        games.forEach((g: Game) => {
-          if (g.series) {
-            const matchup = [g.teamA, g.teamB].sort().join("_vs_")
-            currentSeries[matchup] = g.series
-          }
-
-          if (g.status === "conclusa") {
-            playedGames.push(g)
-          }
-
-          const gameTime = new Date(g.dateTime).getTime()
-          if ((g.status === "programmata" || g.status === "in corso") && gameTime > now) {
-            if (!nextGame || gameTime < new Date(nextGame.dateTime).getTime()) {
-              nextGame = g
-            }
-          }
-        })
-
-        setSeriesMap(currentSeries)
-        setPastGames(playedGames.reverse())
-        if (nextGame) setHighlightedTeam((nextGame as Game).teamA)
-      })
-  }, [])
+  if (loading) return <div>Caricamento dati NBA 2024-25...</div>;
+  const standingsArray = computeStandings(allGames.filter(g => g.status === "Final"));
 
   return (
-    <main className="min-h-screen bg-gray-100 px-4 py-6 flex flex-col items-center">
-      <div className="flex flex-col items-center mb-8">
-        <Image src="https://loodibee.com/wp-content/uploads/nba-logo-transparent.png" alt="NBA Logo" width={80} height={80} className="mb-2 drop-shadow-md" />
-        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
-          NBA Playoff 2025
-        </h1>
-        <p className="text-sm text-gray-500 text-center mt-1">
-          Prossima partita delle squadre finaliste
-        </p>
-      </div>
-
-      {highlightedTeam && (
-        <div className="w-full max-w-2xl mb-10">
-          <LiveCountdownCard team={highlightedTeam} highlighted={true} />
-        </div>
-      )}
-
-      <div className="w-full max-w-6xl grid gap-6 grid-cols-1 sm:grid-cols-2 mb-10">
-        {teams.map((team) => {
-          const fullName = aliasMap[team] || team
-          const opponentEntry = Object.entries(seriesMap).find(([key]) => key.includes(fullName))
-
-          let seriesLabel = ""
-          let progress = 0
-
-          if (opponentEntry) {
-            seriesLabel = opponentEntry[1]
-            const match = seriesLabel.match(/(\w+)\s+leads\s+(\d+)-(\d+)/i)
-            if (match) {
-              const winsA = parseInt(match[2], 10)
-              progress = (winsA / 4) * 100
-            }
-          }
-
-          return (
-            <div key={team} className="flex flex-col">
-              {seriesLabel && (
-                <div className="text-sm font-semibold mb-1 text-center" style={{ color: "#607D8B" }}>
-                  Serie: {seriesLabel}
-                  <div className="w-full h-1 bg-gray-300 rounded overflow-hidden mt-1">
-                    <div
-                      className="h-full bg-blue-500"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              )}
-              <LiveCountdownCard team={team} />
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="w-full max-w-4xl">
-        <h2 className="text-xl font-semibold mb-4 text-center" style={{ color: "#607D8B" }}>Ultime partite concluse</h2>
-        <div className="text-center mb-4">
-          <button onClick={() => setShowModal(true)} className="text-blue-600 underline text-sm">Vedi tutte</button>
-        </div>
-        <ul className="space-y-2">
-          {pastGames.slice(0, 5).map((g, i) => (
-            <li key={i} className="bg-white rounded shadow p-4 text-sm text-center" style={{ color: "#607D8B" }}>
-              <strong>{g.teamA}</strong> vs <strong>{g.teamB}</strong> - {g.game} → <span className="text-green-600 font-medium">{g.result}</span>
+    <main style={{ backgroundColor: "#1d428a", color: "#fff", minHeight: "100vh", padding: 16 }}>
+      <h1>🏀 NBA 2024-25 Regular Season Live</h1>
+      {/* Standings - Eastern & Western */}
+      <section>
+        <h2>Classifica Conference (Top 10 Eastern)</h2>
+        <StandingsTable standings={standingsArray.filter(t => t.conference === "East").slice(0,10)} teamLogos={teamLogos} />
+        <h2>Classifica Conference (Top 10 Western)</h2>
+        <StandingsTable standings={standingsArray.filter(t => t.conference === "West").slice(0,10)} teamLogos={teamLogos} />
+      </section>
+      <section>
+        <h2>Partite di oggi</h2>
+        <ul>
+          {gamesToday.length === 0
+            ? <li>Nessuna partita programmata oggi.</li>
+            : gamesToday.map(game => (
+                <li key={game.id}>
+                  <img src={teamLogos[game.home_team.full_name]} alt={game.home_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4}}/>
+                  {game.home_team.full_name} vs
+                  <img src={teamLogos[game.visitor_team.full_name]} alt={game.visitor_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4, marginLeft:7}}/>
+                  {game.visitor_team.full_name}
+                  {" | "}
+                  {game.status === "Final" ? `${game.home_team_score} - ${game.visitor_team_score}` : game.status}
+                  {" | "}
+                  {game.date.split("T")[0]}
+                </li>
+              ))}
+        </ul>
+      </section>
+      <section>
+        <h2>Ultimi risultati</h2>
+        <ul>
+          {recentResults.map(game => (
+            <li key={game.id}>
+              <img src={teamLogos[game.home_team.full_name]} alt={game.home_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4}}/>
+              {game.home_team.full_name} {game.home_team_score} -
+              <img src={teamLogos[game.visitor_team.full_name]} alt={game.visitor_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4,marginLeft:7}}/>
+              {game.visitor_team.full_name} {game.visitor_team_score}
+              ({game.date.split("T")[0]})
             </li>
           ))}
         </ul>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold" style={{ color: "#607D8B" }}>Tutte le partite concluse</h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-red-500 hover:text-red-700"
-              >
-                Chiudi
-              </button>
-            </div>
-            <ul className="space-y-2">
-              {pastGames.map((g, i) => (
-                <li key={i} className="bg-white rounded shadow p-3 text-sm text-center" style={{ color: "#607D8B" }}>
-                  <span className="inline-flex items-center justify-center">
-                    <Image
-                      src={`https://loodibee.com/wp-content/uploads/nba-${g.teamA.toLowerCase().replace(/\s+/g, '-')}-logo.png`}
-                      alt={g.teamA}
-                      width={24}
-                      height={24}
-                      className="w-6 h-6 mr-2"
-                    />
-                    <strong>{g.teamA}</strong>
-                  </span>
-                  vs
-                  <span className="inline-flex items-center justify-center ml-2">
-                    <Image
-                      src={`https://loodibee.com/wp-content/uploads/nba-${g.teamB.toLowerCase().replace(/\s+/g, '-')}-logo.png`}
-                      alt={g.teamB}
-                      width={24}
-                      height={24}
-                      className="w-6 h-6 mr-2"
-                    />
-                    <strong>{g.teamB}</strong>
-                  </span>
-                  - {g.game} →
-                  <span className="text-green-600 font-medium"> {g.result}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
+      </section>
+      <section>
+        <h2>Squadre NBA</h2>
+        <ul style={{ columns: 3 }}>
+          {teams.map(team => (
+            <li key={team.id}>
+              <img src={teamLogos[team.full_name]} alt={team.full_name} style={{width:22,verticalAlign:'middle',marginRight:8}}/>
+              <b>{team.full_name}</b> ({team.abbreviation}) - {team.city}
+            </li>
+          ))}
+        </ul>
+      </section>
+      <footer style={{ marginTop: 32, opacity: 0.7 }}>
+        <small>Dati live by <a href="https://balldontlie.io" style={{ color: "#fff" }}>balldontlie.io</a> | Auto-refresh ogni 10 minuti.</small>
+      </footer>
     </main>
-  )
+  );
 }
