@@ -5,7 +5,7 @@ import { teamLogos } from "@/utils/nbaTeamLogos";
 
 const TEAMS_ENDPOINT = "https://api.balldontlie.io/v1/teams";
 const GAMES_ENDPOINT = "https://api.balldontlie.io/v1/games";
-const SEASON = 2024;
+const SEASON = 2023; // ← Cambiato a 2023 per avere dati
 
 type Team = {
   id: number;
@@ -66,26 +66,53 @@ function computeStandings(games: Game[]): TeamStanding[] {
 }
 
 export default function HomePage() {
-  const [teams, setTeams] = useState<Team[]>([]); // ✅ Fixed: Team[] instead of any[]
+  const [teams, setTeams] = useState<Team[]>([]);
   const [gamesToday, setGamesToday] = useState<Game[]>([]);
   const [recentResults, setRecentResults] = useState<Game[]>([]);
   const [allGames, setAllGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const [debugInfo, setDebugInfo] = useState<string>("");
 
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
       try {
+        // Squadre
+        console.log("Fetching teams...");
         const teamsResp = await fetch(TEAMS_ENDPOINT);
-        setTeams((await teamsResp.json()).data);
+        const teamsData = await teamsResp.json();
+        console.log("Teams response:", teamsData);
+        setTeams(teamsData.data || []);
+
+        // Partite recenti (senza filtro data specifico)
+        console.log("Fetching recent games...");
+        const recentUrl = `${GAMES_ENDPOINT}?season=${SEASON}&per_page=20`;
+        const recentResp = await fetch(recentUrl);
+        const recentData = await recentResp.json();
+        console.log("Recent games response:", recentData);
+        setRecentResults(recentData.data || []);
+
+        // Tutte le partite (per standings)
+        console.log("Fetching all games...");
+        const allUrl = `${GAMES_ENDPOINT}?season=${SEASON}&per_page=200`;
+        const allResp = await fetch(allUrl);
+        const allData = await allResp.json();
+        console.log("All games response:", allData);
+        setAllGames(allData.data || []);
+
+        // Partite di oggi (manteniamo ma potrebbe essere vuoto)
         const todayStr = new Date().toISOString().split("T")[0];
-        const gamesResp = await fetch(`${GAMES_ENDPOINT}?dates[]=${todayStr}&season=${SEASON}&per_page=25`);
-        setGamesToday((await gamesResp.json()).data);
-        const recentResp = await fetch(`${GAMES_ENDPOINT}?season=${SEASON}&end_date=${todayStr}&per_page=10`);
-        setRecentResults((await recentResp.json()).data);
-        const allResp = await fetch(`${GAMES_ENDPOINT}?season=${SEASON}&per_page=100`);
-        setAllGames((await allResp.json()).data);
-      } catch (e) { console.error("Errore API NBA:", e); }
+        const gamesUrl = `${GAMES_ENDPOINT}?dates[]=${todayStr}&season=${SEASON}&per_page=25`;
+        const gamesResp = await fetch(gamesUrl);
+        const gamesData = await gamesResp.json();
+        setGamesToday(gamesData.data || []);
+
+        setDebugInfo(`Teams: ${teamsData.data?.length || 0}, Today: ${gamesData.data?.length || 0}, Recent: ${recentData.data?.length || 0}, All: ${allData.data?.length || 0}`);
+
+      } catch (e) { 
+        console.error("Errore API NBA:", e); 
+        setDebugInfo(`Error: ${e}`);
+      }
       setLoading(false);
     }
     fetchAll();
@@ -93,18 +120,26 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) return <div>Caricamento dati NBA 2024-25...</div>;
+  if (loading) return <div>Caricamento dati NBA 2023-24...</div>;
   const standingsArray = computeStandings(allGames.filter(g => g.status === "Final"));
 
   return (
     <main style={{ backgroundColor: "#1d428a", color: "#fff", minHeight: "100vh", padding: 16 }}>
-      <h1>🏀 NBA 2024-25 Regular Season Live</h1>
+      <h1>🏀 NBA 2023-24 Regular Season Live</h1>
+      
+      {/* Debug info */}
+      <div style={{background:"#333", padding:"8px", margin:"8px 0", fontSize:"12px", borderRadius:"4px"}}>
+        Debug: {debugInfo}
+      </div>
+
+      {/* Standings */}
       <section>
         <h2>Classifica Conference (Top 10 Eastern)</h2>
         <StandingsTable standings={standingsArray.filter(t => t.conference === "East").slice(0,10)} />
         <h2>Classifica Conference (Top 10 Western)</h2>
         <StandingsTable standings={standingsArray.filter(t => t.conference === "West").slice(0,10)} />
       </section>
+
       <section>
         <h2>Partite di oggi</h2>
         <ul>
@@ -124,20 +159,24 @@ export default function HomePage() {
               ))}
         </ul>
       </section>
+
       <section>
         <h2>Ultimi risultati</h2>
         <ul>
-          {recentResults.map(game => (
-            <li key={game.id}>
-              <img src={teamLogos[game.home_team.full_name]} alt={game.home_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4}}/>
-              {game.home_team.full_name} {game.home_team_score} -
-              <img src={teamLogos[game.visitor_team.full_name]} alt={game.visitor_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4,marginLeft:7}}/>
-              {game.visitor_team.full_name} {game.visitor_team_score}
-              ({game.date.split("T")[0]})
-            </li>
-          ))}
+          {recentResults.length === 0
+            ? <li>Nessun risultato trovato.</li>
+            : recentResults.map(game => (
+                <li key={game.id}>
+                  <img src={teamLogos[game.home_team.full_name]} alt={game.home_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4}}/>
+                  {game.home_team.full_name} {game.home_team_score} -
+                  <img src={teamLogos[game.visitor_team.full_name]} alt={game.visitor_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4,marginLeft:7}}/>
+                  {game.visitor_team.full_name} {game.visitor_team_score}
+                  ({game.date.split("T")[0]})
+                </li>
+              ))}
         </ul>
       </section>
+
       <section>
         <h2>Squadre NBA</h2>
         <ul style={{ columns: 3 }}>
@@ -149,6 +188,7 @@ export default function HomePage() {
           ))}
         </ul>
       </section>
+
       <footer style={{ marginTop: 32, opacity: 0.7 }}>
         <small>Dati live by <a href="https://balldontlie.io" style={{ color: "#fff" }}>balldontlie.io</a> | Auto-refresh ogni 10 minuti.</small>
       </footer>
