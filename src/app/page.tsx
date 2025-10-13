@@ -3,73 +3,13 @@ import { useEffect, useState } from "react";
 import StandingsTable from '@/components/StandingsTable';
 import { teamLogos } from "@/utils/nbaTeamLogos";
 
-const TEAMS_ENDPOINT = "https://api.balldontlie.io/v1/teams";
-const GAMES_ENDPOINT = "https://api.balldontlie.io/v1/games";
-const SEASON = 2023; // ← Cambiato a 2023 per avere dati
-
-type Team = {
-  id: number;
-  full_name: string;
-  abbreviation: string;
-  city: string;
-  conference: string;
-};
-
-type Game = {
-  id: number;
-  home_team: { id: number; full_name: string; conference: string };
-  visitor_team: { id: number; full_name: string; conference: string };
-  home_team_score: number;
-  visitor_team_score: number;
-  status: string;
-  date: string;
-};
-
-type TeamStanding = {
-  team: string;
-  wins: number;
-  losses: number;
-  pct: number;
-  conference: string;
-};
-
-function computeStandings(games: Game[]): TeamStanding[] {
-  const standings: Record<string, TeamStanding> = {};
-  for (const g of games) {
-    if (!standings[g.home_team.full_name]) {
-      standings[g.home_team.full_name] = {
-        team: g.home_team.full_name,
-        wins: 0, losses: 0, pct: 0, conference: g.home_team.conference
-      };
-    }
-    if (!standings[g.visitor_team.full_name]) {
-      standings[g.visitor_team.full_name] = {
-        team: g.visitor_team.full_name,
-        wins: 0, losses: 0, pct: 0, conference: g.visitor_team.conference
-      };
-    }
-    if (g.status === "Final") {
-      if (g.home_team_score > g.visitor_team_score) {
-        standings[g.home_team.full_name].wins++;
-        standings[g.visitor_team.full_name].losses++;
-      } else if (g.home_team_score < g.visitor_team_score) {
-        standings[g.visitor_team.full_name].wins++;
-        standings[g.home_team.full_name].losses++;
-      }
-    }
-  }
-  Object.values(standings).forEach(t => {
-    const total = t.wins + t.losses;
-    t.pct = total > 0 ? t.wins / total : 0;
-  });
-  return Object.values(standings).sort((a, b) => b.pct - a.pct);
-}
+// ENDPOINT NBA UFFICIALI (gratuiti)
+const NBA_TEAMS_URL = "https://stats.nba.com/stats/leagueteams?LeagueID=00&Season=2023-24";
+const NBA_GAMES_URL = "https://stats.nba.com/stats/leaguegames?Direction=DESC&LeagueID=00&PlayerOrTeam=T&Season=2023-24&SeasonType=Regular+Season&Sorter=DATE";
 
 export default function HomePage() {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [gamesToday, setGamesToday] = useState<Game[]>([]);
-  const [recentResults, setRecentResults] = useState<Game[]>([]);
-  const [allGames, setAllGames] = useState<Game[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [debugInfo, setDebugInfo] = useState<string>("");
 
@@ -77,120 +17,91 @@ export default function HomePage() {
     async function fetchAll() {
       setLoading(true);
       try {
-        // Squadre
-        console.log("Fetching teams...");
-        const teamsResp = await fetch(TEAMS_ENDPOINT);
+        // Prova con NBA.com diretto
+        console.log("Fetching NBA official data...");
+        
+        const teamsResp = await fetch(NBA_TEAMS_URL, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        
+        if (!teamsResp.ok) {
+          throw new Error(`Teams API failed: ${teamsResp.status}`);
+        }
+        
         const teamsData = await teamsResp.json();
-        console.log("Teams response:", teamsData);
-        setTeams(teamsData.data || []);
+        console.log("Teams data:", teamsData);
+        setTeams(teamsData.resultSets[0]?.rowSet || []);
 
-        // Partite recenti (senza filtro data specifico)
-        console.log("Fetching recent games...");
-        const recentUrl = `${GAMES_ENDPOINT}?season=${SEASON}&per_page=20`;
-        const recentResp = await fetch(recentUrl);
-        const recentData = await recentResp.json();
-        console.log("Recent games response:", recentData);
-        setRecentResults(recentData.data || []);
-
-        // Tutte le partite (per standings)
-        console.log("Fetching all games...");
-        const allUrl = `${GAMES_ENDPOINT}?season=${SEASON}&per_page=200`;
-        const allResp = await fetch(allUrl);
-        const allData = await allResp.json();
-        console.log("All games response:", allData);
-        setAllGames(allData.data || []);
-
-        // Partite di oggi (manteniamo ma potrebbe essere vuoto)
-        const todayStr = new Date().toISOString().split("T")[0];
-        const gamesUrl = `${GAMES_ENDPOINT}?dates[]=${todayStr}&season=${SEASON}&per_page=25`;
-        const gamesResp = await fetch(gamesUrl);
+        const gamesResp = await fetch(NBA_GAMES_URL, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        
+        if (!gamesResp.ok) {
+          throw new Error(`Games API failed: ${gamesResp.status}`);
+        }
+        
         const gamesData = await gamesResp.json();
-        setGamesToday(gamesData.data || []);
+        console.log("Games data:", gamesData);
+        setGames(gamesData.resultSets[0]?.rowSet?.slice(0, 20) || []);
 
-        setDebugInfo(`Teams: ${teamsData.data?.length || 0}, Today: ${gamesData.data?.length || 0}, Recent: ${recentData.data?.length || 0}, All: ${allData.data?.length || 0}`);
+        setDebugInfo(`Teams: ${teamsData.resultSets[0]?.rowSet?.length || 0}, Games: ${gamesData.resultSets[0]?.rowSet?.length || 0}`);
 
       } catch (e) { 
         console.error("Errore API NBA:", e); 
         setDebugInfo(`Error: ${e}`);
+        
+        // FALLBACK: Dati mock se API fallisce
+        setTeams([
+          ['Boston Celtics', 'BOS', 'Eastern'],
+          ['Lakers', 'LAL', 'Western']
+        ]);
+        setGames([]);
       }
       setLoading(false);
     }
     fetchAll();
-    const interval = setInterval(fetchAll, 600000);
-    return () => clearInterval(interval);
   }, []);
 
-  if (loading) return <div>Caricamento dati NBA 2023-24...</div>;
-  const standingsArray = computeStandings(allGames.filter(g => g.status === "Final"));
+  if (loading) return <div style={{padding:50}}>Caricamento dati NBA...</div>;
 
   return (
     <main style={{ backgroundColor: "#1d428a", color: "#fff", minHeight: "100vh", padding: 16 }}>
       <h1>🏀 NBA 2023-24 Regular Season Live</h1>
       
-      {/* Debug info */}
       <div style={{background:"#333", padding:"8px", margin:"8px 0", fontSize:"12px", borderRadius:"4px"}}>
         Debug: {debugInfo}
       </div>
 
-      {/* Standings */}
-      <section>
-        <h2>Classifica Conference (Top 10 Eastern)</h2>
-        <StandingsTable standings={standingsArray.filter(t => t.conference === "East").slice(0,10)} />
-        <h2>Classifica Conference (Top 10 Western)</h2>
-        <StandingsTable standings={standingsArray.filter(t => t.conference === "West").slice(0,10)} />
-      </section>
-
-      <section>
-        <h2>Partite di oggi</h2>
-        <ul>
-          {gamesToday.length === 0
-            ? <li>Nessuna partita programmata oggi.</li>
-            : gamesToday.map(game => (
-                <li key={game.id}>
-                  <img src={teamLogos[game.home_team.full_name]} alt={game.home_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4}}/>
-                  {game.home_team.full_name} vs
-                  <img src={teamLogos[game.visitor_team.full_name]} alt={game.visitor_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4, marginLeft:7}}/>
-                  {game.visitor_team.full_name}
-                  {" | "}
-                  {game.status === "Final" ? `${game.home_team_score} - ${game.visitor_team_score}` : game.status}
-                  {" | "}
-                  {game.date.split("T")[0]}
-                </li>
-              ))}
-        </ul>
-      </section>
-
-      <section>
-        <h2>Ultimi risultati</h2>
-        <ul>
-          {recentResults.length === 0
-            ? <li>Nessun risultato trovato.</li>
-            : recentResults.map(game => (
-                <li key={game.id}>
-                  <img src={teamLogos[game.home_team.full_name]} alt={game.home_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4}}/>
-                  {game.home_team.full_name} {game.home_team_score} -
-                  <img src={teamLogos[game.visitor_team.full_name]} alt={game.visitor_team.full_name} style={{width:22,verticalAlign:'middle',marginRight:4,marginLeft:7}}/>
-                  {game.visitor_team.full_name} {game.visitor_team_score}
-                  ({game.date.split("T")[0]})
-                </li>
-              ))}
-        </ul>
-      </section>
-
       <section>
         <h2>Squadre NBA</h2>
-        <ul style={{ columns: 3 }}>
-          {teams.map(team => (
-            <li key={team.id}>
-              <img src={teamLogos[team.full_name]} alt={team.full_name} style={{width:22,verticalAlign:'middle',marginRight:8}}/>
-              <b>{team.full_name}</b> ({team.abbreviation}) - {team.city}
+        <ul style={{ columns: 2 }}>
+          {teams.map((team, i) => (
+            <li key={i}>
+              <b>{team[1]}</b> - {team[2]}
             </li>
           ))}
         </ul>
       </section>
 
+      <section>
+        <h2>Partite Recenti</h2>
+        <ul>
+          {games.length === 0 
+            ? <li>API temporaneamente non disponibile - implementazione in corso...</li>
+            : games.map((game, i) => (
+                <li key={i}>Partita #{i + 1}: {JSON.stringify(game).substring(0, 100)}...</li>
+              ))}
+        </ul>
+      </section>
+
       <footer style={{ marginTop: 32, opacity: 0.7 }}>
-        <small>Dati live by <a href="https://balldontlie.io" style={{ color: "#fff" }}>balldontlie.io</a> | Auto-refresh ogni 10 minuti.</small>
+        <small>Dati by NBA.com | In sviluppo...</small>
       </footer>
     </main>
   );
