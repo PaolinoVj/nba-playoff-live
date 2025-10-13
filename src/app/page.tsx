@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import StandingsTable from '@/components/StandingsTable';
-import { teamLogos } from "@/utils/nbaTeamLogos";
 
 // API NBA FUNZIONANTE
 const API_BASE = "https://api.server.nbaapi.com/api";
@@ -94,8 +93,9 @@ export default function HomePage() {
         setGames(gamesList);
         setRecentGames(gamesList.slice(0, 15));
         
-      } catch (err: any) {
-        setError(`Errore API: ${err.message}`);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        setError(`Errore API: ${errorMessage}`);
         console.error("NBA API Error:", err);
       }
       
