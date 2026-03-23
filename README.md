@@ -1,63 +1,83 @@
-***
+# NBA Live Hub
 
-# NBA Regular Season Live 2024-25
+Dashboard NBA completa per **regular season + playoff picture**, pensata per essere pubblicata su **GitHub + Vercel** e vista bene su smartphone e browser.
 
-**Web App aggiornata in tempo reale sulla stagione NBA 2024-25.**
+## Cosa include
 
-## Funzionalità
+- scoreboard live e partite del giorno
+- prossime partite
+- standings East / West
+- playoff picture pronta per top 6 + play-in + chase
+- route API interne Next.js
+- refresh automatico lato client
+- base pronta per dettaglio partita, bracket e squadre preferite
 
-- **Live standings** delle conference NBA (classifiche in tempo reale)
-- **Partite del giorno** e risultati degli ultimi incontri
-- **Lista squadre NBA** aggiornata con info e abbreviazioni
-- **Aggiornamento automatico** ogni 10 minuti durante la stagione
-- **Design NBA moderno**, mobile responsive
-- Nessuna dipendenza da file JSON manuali: tutti i dati arrivano dalle API pubbliche `balldontlie.io`
+## Struttura chiave
 
-## Tecnologie
+```text
+src/
+  app/
+    api/nba/
+      health/route.ts
+      overview/route.ts
+    layout.tsx
+    page.tsx
+  components/
+    DashboardClient.tsx
+  lib/nba/
+    constants.ts
+    types.ts
+    providers/
+      espn.ts
+```
 
-- **Next.js** + **React** (Typescript supportato)
-- **fetch API** REST per collegamento ai dati NBA live
-- **CSS personalizzato/NBA style** (modificabile tramite `globals.css`)
-- **Compatibilità mobile** migliorata
+## Provider attuale
 
-## Come usare
+Questa versione usa **ESPN public endpoints** lato server come base gratuita, quindi non richiede API key per iniziare.
 
-1. **Clona o aggiorna** il repository:
+Per una versione futura più stabile e documentata puoi sostituire il provider con balldontlie mantenendo la stessa UI.
 
-   ```
-   git clone https://github.com/PaolinoVj/nba-playoff-live.git
-   cd nba-playoff-live
-   ```
+## Avvio locale
 
-2. **Installa le dipendenze** (se nuove):
+```bash
+npm install
+npm run dev
+```
 
-   ```
-   npm install
-   ```
+Apri:
 
-3. **Avvia l'app in locale**:
+```text
+http://localhost:3000
+```
 
-   ```
-   npm run dev
-   ```
+## Endpoint interni
 
-4. Visita `http://localhost:3000` per vedere la dashboard live NBA 2024-25.
+- `/api/nba/health`
+- `/api/nba/overview`
 
-## Configurazione & Personalizzazione
+## Deploy su GitHub e Vercel
 
-- Tutti gli stili principali sono in **`src/app/globals.css`**.
-- Modifica o estendi il componente `page.tsx` per nuove funzioni (es. standings più avanzate, statistiche giocatori, dettagli partita).
-- Vuoi cambiare tema colore? Modifica le variabili :root in `globals.css`.
+```bash
+git add .
+git commit -m "Refactor NBA app: regular season + playoff ready dashboard"
+git push
+```
 
-## Fonti dati
+Poi importa o aggiorna il repository su Vercel.
 
-- Tutti i dati sono ottenuti da: [balldontlie.io API](https://balldontlie.io)
-  - **/teams** — lista squadre
-  - **/games** — partite per stagione, data, stato
+## Roadmap consigliata
 
-## Note
+1. pagina dettaglio partita `/game/[id]`
+2. filtro squadre preferite
+3. bracket playoff round-by-round
+4. switch provider ESPN / balldontlie
+5. cron o revalidate dedicato per finestre live
 
-- Il servizio balldontlie.io fornisce aggiornamenti rapidi e gratuiti, ma per classifiche avanzate può servire un extra processing client-side.
-- La struttura del frontend è pronta per accogliere temi custom e componenti aggiuntivi!
+## Nota
 
-***
+Non è stato possibile eseguire qui una build completa con dipendenze installate dal registry, quindi dopo aver scompattato il progetto conviene fare un controllo locale con:
+
+```bash
+npm install
+npm run build
+```
