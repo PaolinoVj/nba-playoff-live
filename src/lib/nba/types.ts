@@ -1,5 +1,6 @@
 export type Conference = 'East' | 'West'
 export type SeasonPhase = 'preseason' | 'regular' | 'playoffs' | 'offseason'
+export type TeamPhaseFilter = 'regular' | 'playoffs' | 'all'
 
 export interface TeamStanding {
   id?: number
@@ -73,7 +74,6 @@ export interface HistoricalGameTeam {
   division?: string
 }
 
-
 export interface ApiTeam {
   id: number
   abbreviation: string
@@ -142,5 +142,31 @@ export interface StandingsSnapshotPayload {
     east: PlayoffPicture
     west: PlayoffPicture
   }
+  note?: string
+}
+
+export interface TeamSummaryTeam extends ApiTeam {
+  logo?: string
+}
+
+export interface TeamSummaryPayload {
+  provider: string
+  generatedAt: string
+  season: number
+  phaseFilter: TeamPhaseFilter
+  team: TeamSummaryTeam | null
+  standingsEntry?: TeamStanding
+  summary: {
+    totalGames: number
+    completedGames: number
+    wins: number
+    losses: number
+    homeRecord: string
+    awayRecord: string
+    last10: string
+  }
+  recentGames: HistoricalGame[]
+  upcomingGames: HistoricalGame[]
+  allGames: HistoricalGame[]
   note?: string
 }

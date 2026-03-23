@@ -26,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <nav className="header-nav">
               <Link href="/">Dashboard</Link>
               <Link href="/season">Season Explorer</Link>
+              <Link href="/teams">Teams</Link>
             </nav>
             <div className="header-live-pill">
               <span className="live-dot" />
