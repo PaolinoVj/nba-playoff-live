@@ -73,7 +73,7 @@ async function fetchJson(url: string, retries = 2) {
     try {
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'nba-live-hub/1.1',
+          'User-Agent': 'nba-live-hub/2.0',
           Accept: 'application/json',
         },
         next: { revalidate: DEFAULT_REVALIDATE_SECONDS },
@@ -154,6 +154,7 @@ function parseStandings(data: any): { east: TeamStanding[]; west: TeamStanding[]
 
     entries.forEach((entry: any, index: number) => {
       const team: TeamStanding = {
+        id: Number(entry?.team?.id ?? 0) || undefined,
         name: entry?.team?.displayName || 'Unknown Team',
         shortName: entry?.team?.shortDisplayName || entry?.team?.abbreviation || 'UNK',
         abbreviation: entry?.team?.abbreviation || 'UNK',

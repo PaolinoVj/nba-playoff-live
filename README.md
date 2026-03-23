@@ -1,16 +1,21 @@
 # NBA Live Hub
 
-Dashboard NBA completa per **regular season + playoff picture**, pensata per essere pubblicata su **GitHub + Vercel** e vista bene su smartphone e browser.
+Dashboard NBA pensata per **regular season + playoff ready**, pubblicabile su **GitHub + Vercel** e leggibile bene su smartphone e browser.
 
-## Cosa include
+## Stack dati in questa versione
 
-- scoreboard live e partite del giorno
-- prossime partite
-- standings East / West
-- playoff picture pronta per top 6 + play-in + chase
-- route API interne Next.js
-- refresh automatico lato client
-- base pronta per dettaglio partita, bracket e squadre preferite
+- **ESPN public endpoints** per overview live e standings correnti
+- **balldontlie** per storico partite interrogato on demand
+- orari sempre convertiti in **Europe/Rome** lato app
+- route API interne Next.js per non esporre direttamente i provider al browser
+
+## Nuovo in questa patch
+
+- pagina `/season` con filtro stagione / squadra / regular season / playoff
+- route `/api/nba/games` per interrogare lo storico senza scaricare archivi locali
+- route `/api/nba/teams` per popolare i filtri squadra con gli ID di balldontlie
+- route `/api/nba/standings` per classifica corrente e playoff picture
+- navigazione base in header tra dashboard e season explorer
 
 ## Struttura chiave
 
@@ -18,24 +23,38 @@ Dashboard NBA completa per **regular season + playoff picture**, pensata per ess
 src/
   app/
     api/nba/
+      games/route.ts
       health/route.ts
       overview/route.ts
+      standings/route.ts
+      teams/route.ts
+    season/page.tsx
     layout.tsx
     page.tsx
   components/
     DashboardClient.tsx
+    SeasonExplorer.tsx
   lib/nba/
     constants.ts
     types.ts
     providers/
+      balldontlie.ts
       espn.ts
 ```
 
-## Provider attuale
+## Variabili ambiente
 
-Questa versione usa **ESPN public endpoints** lato server come base gratuita, quindi non richiede API key per iniziare.
+Crea o aggiorna `.env.local`:
 
-Per una versione futura più stabile e documentata puoi sostituire il provider con balldontlie mantenendo la stessa UI.
+```bash
+BALLDONTLIE_API_KEY=la_tua_api_key
+```
+
+Senza questa chiave:
+
+- la home continua a funzionare con ESPN
+- `/season` caricherà la classifica corrente
+- lo storico partite via `/api/nba/games` e `/api/nba/teams` risponderà con messaggio di configurazione mancante
 
 ## Avvio locale
 
@@ -46,38 +65,20 @@ npm run dev
 
 Apri:
 
-```text
-http://localhost:3000
-```
+- `http://localhost:3000`
+- `http://localhost:3000/season`
 
 ## Endpoint interni
 
 - `/api/nba/health`
 - `/api/nba/overview`
+- `/api/nba/standings`
+- `/api/nba/teams`
+- `/api/nba/games?season=2025&postseason=false&per_page=100`
 
-## Deploy su GitHub e Vercel
-
-```bash
-git add .
-git commit -m "Refactor NBA app: regular season + playoff ready dashboard"
-git push
-```
-
-Poi importa o aggiorna il repository su Vercel.
-
-## Roadmap consigliata
-
-1. pagina dettaglio partita `/game/[id]`
-2. filtro squadre preferite
-3. bracket playoff round-by-round
-4. switch provider ESPN / balldontlie
-5. cron o revalidate dedicato per finestre live
-
-## Nota
-
-Non è stato possibile eseguire qui una build completa con dipendenze installate dal registry, quindi dopo aver scompattato il progetto conviene fare un controllo locale con:
+## Build di controllo
 
 ```bash
-npm install
 npm run build
+npm start
 ```

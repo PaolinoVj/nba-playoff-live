@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import './globals.css'
 
 export const metadata = {
@@ -22,6 +23,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <h1 className="site-title">Regular Season + Playoff Ready</h1>
               </div>
             </div>
+            <nav className="header-nav">
+              <Link href="/">Dashboard</Link>
+              <Link href="/season">Season Explorer</Link>
+            </nav>
             <div className="header-live-pill">
               <span className="live-dot" />
               Public dashboard
