@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getBalldontlieTeamSummary, getCurrentSeasonYear } from '@/lib/nba/providers/balldontlie'
 import type { TeamPhaseFilter } from '@/lib/nba/types'
 
+export const dynamic = 'force-dynamic'
+
 export const revalidate = 300
 
 function parseSeason(value: string | null) {

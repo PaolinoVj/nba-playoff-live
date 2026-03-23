@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getEspnOverview, makeEmptyOverview } from '@/lib/nba/providers/espn'
 
+export const dynamic = 'force-dynamic'
+
 export const revalidate = 60
 
 export async function GET() {

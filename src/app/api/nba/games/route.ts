@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getBalldontlieGames, getCurrentSeasonYear } from '@/lib/nba/providers/balldontlie'
 
+export const dynamic = 'force-dynamic'
+
 export const revalidate = 300
 
 function parseBoolean(value: string | null) {
