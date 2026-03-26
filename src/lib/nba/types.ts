@@ -14,6 +14,7 @@ export interface TeamStanding {
   streak?: string
   conference: Conference
   rank: number
+  seed?: number
   logo?: string
 }
 
