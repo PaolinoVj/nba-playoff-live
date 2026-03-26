@@ -9,6 +9,10 @@ function teamHref(abbreviation: string) {
   return `/teams/${abbreviation.toLowerCase()}`
 }
 
+function resolveTeamLogo(abbreviation: string, standingLogo?: string) {
+  return standingLogo || teamLogos[abbreviation] || getEspnTeamLogo(abbreviation)
+}
+
 export default function TeamsDirectory() {
   const [teams, setTeams] = useState<TeamsListPayload['data']>([])
   const [standings, setStandings] = useState<StandingsSnapshotPayload | null>(null)
@@ -129,7 +133,7 @@ export default function TeamsDirectory() {
                     <div className="team-directory-top">
                       <div className="team-directory-team">
                         <img
-                          src={standing?.logo || teamLogos[team.abbreviation] || getEspnTeamLogo(team.abbreviation)}
+                          src={resolveTeamLogo(team.abbreviation, standing?.logo)}
                           alt={team.fullName}
                           className="team-logo"
                         />

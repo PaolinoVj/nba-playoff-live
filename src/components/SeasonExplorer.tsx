@@ -10,13 +10,15 @@ interface SeasonExplorerProps {
 
 
 function renderStandingRow(team: TeamStanding) {
+  const fallbackLogo = getEspnTeamLogo(team.abbreviation)
+
   return (
     <tr key={team.abbreviation}>
       <td>{team.seed ?? team.rank}</td>
       <td>
         <div className="team-cell">
           <img
-            src={team.logo || teamLogos[team.abbreviation] || getEspnTeamLogo(team.abbreviation)}
+            src={team.logo || teamLogos[team.abbreviation] || fallbackLogo}
             alt={team.name}
             className="team-logo small"
           />
