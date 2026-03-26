@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import type { StandingsSnapshotPayload, TeamsListPayload } from '@/lib/nba/types'
-import { teamLogos } from '@/utils/nbaTeamLogos'
+import { getEspnTeamLogo, teamLogos } from '@/utils/nbaTeamLogos'
 
 function teamHref(abbreviation: string) {
   return `/teams/${abbreviation.toLowerCase()}`
@@ -129,7 +129,7 @@ export default function TeamsDirectory() {
                     <div className="team-directory-top">
                       <div className="team-directory-team">
                         <img
-                          src={standing?.logo || teamLogos[team.abbreviation] || `https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/${team.abbreviation.toLowerCase()}.png`}
+                          src={standing?.logo || teamLogos[team.abbreviation] || getEspnTeamLogo(team.abbreviation)}
                           alt={team.fullName}
                           className="team-logo"
                         />

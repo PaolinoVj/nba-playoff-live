@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { GamesListPayload, HistoricalGame, StandingsSnapshotPayload, TeamStanding, TeamsListPayload } from '@/lib/nba/types'
-import { teamLogos } from '@/utils/nbaTeamLogos'
+import { getEspnTeamLogo, teamLogos } from '@/utils/nbaTeamLogos'
 
 interface SeasonExplorerProps {
   initialSeason: number
@@ -16,7 +16,7 @@ function renderStandingRow(team: TeamStanding) {
       <td>
         <div className="team-cell">
           <img
-            src={team.logo || teamLogos[team.abbreviation] || `https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/${team.abbreviation.toLowerCase()}.png`}
+            src={team.logo || teamLogos[team.abbreviation] || getEspnTeamLogo(team.abbreviation)}
             alt={team.name}
             className="team-logo small"
           />

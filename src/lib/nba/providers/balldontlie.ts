@@ -1,4 +1,4 @@
-import { teamLogos } from '@/utils/nbaTeamLogos'
+import { getEspnTeamLogo, teamLogos } from '@/utils/nbaTeamLogos'
 import type { ApiTeam, GamesListPayload, HistoricalGame, TeamPhaseFilter, TeamSummaryPayload, TeamSummaryTeam, TeamsListPayload } from '@/lib/nba/types'
 import { getEspnOverview } from '@/lib/nba/providers/espn'
 import { requireServerEnv } from '@/lib/env'
@@ -235,7 +235,7 @@ function teamWon(game: HistoricalGame, abbreviation: string) {
 function buildTeamWithLogo(team: ApiTeam): TeamSummaryTeam {
   return {
     ...team,
-    logo: teamLogos[team.abbreviation] || `https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/${team.abbreviation.toLowerCase()}.png`,
+    logo: teamLogos[team.abbreviation] || getEspnTeamLogo(team.abbreviation),
   }
 }
 
