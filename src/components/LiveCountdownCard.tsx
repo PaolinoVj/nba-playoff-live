@@ -30,14 +30,14 @@ const teamColors: Record<string, string> = {
 }
 
 const teamLogos: Record<string, string> = {
-  'Boston Celtics': 'https://loodibee.com/wp-content/uploads/nba-boston-celtics-logo.png',
-  'Miami Heat': 'https://loodibee.com/wp-content/uploads/nba-miami-heat-logo.png',
-  'New York Knicks': 'https://loodibee.com/wp-content/uploads/nba-new-york-knicks-logo.png',
-  'Indiana Pacers': 'https://loodibee.com/wp-content/uploads/nba-indiana-pacers-logo.png',
-  'Denver Nuggets': 'https://loodibee.com/wp-content/uploads/denver-nuggets-logo-symbol.png',
-  'Minnesota Timberwolves': 'https://loodibee.com/wp-content/uploads/nba-minnesota-timberwolves-logo.png',
-  'Oklahoma City Thunder': 'https://loodibee.com/wp-content/uploads/nba-oklahoma-city-thunder-logo.png',
-  'Los Angeles Lakers': 'https://loodibee.com/wp-content/uploads/nba-los-angeles-lakers-logo.png'
+  'Boston Celtics': 'https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/bos.png',
+  'Miami Heat': 'https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/mia.png',
+  'New York Knicks': 'https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/ny.png',
+  'Indiana Pacers': 'https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/ind.png',
+  'Denver Nuggets': 'https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/den.png',
+  'Minnesota Timberwolves': 'https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/min.png',
+  'Oklahoma City Thunder': 'https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/okc.png',
+  'Los Angeles Lakers': 'https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/lal.png'
 }
 
 export default function LiveCountdownCard({ team, highlighted = false }: { team: string; highlighted?: boolean }) {

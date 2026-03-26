@@ -3,6 +3,10 @@ import type { Conference, OverviewPayload, ScoreboardGame, TeamStanding, SeasonP
 
 const dayMs = 24 * 60 * 60 * 1000
 
+
+const EAST_ABBREVIATIONS = new Set(['ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DET', 'IND', 'MIA', 'MIL', 'NYK', 'ORL', 'PHI', 'TOR', 'WAS'])
+const WEST_ABBREVIATIONS = new Set(['DAL', 'DEN', 'GSW', 'HOU', 'LAC', 'LAL', 'MEM', 'MIN', 'NOP', 'OKC', 'PHX', 'POR', 'SAC', 'SAS', 'UTA'])
+
 function toEspnDate(date: Date): string {
   const y = date.getUTCFullYear()
   const m = String(date.getUTCMonth() + 1).padStart(2, '0')
@@ -138,37 +142,118 @@ function parseGame(event: any): ScoreboardGame {
   }
 }
 
-function getStatValue(stats: any[], name: string): string | undefined {
-  const hit = stats?.find((entry: any) => entry.name === name)
-  return hit?.displayValue ?? hit?.value?.toString()
+function getStatValue(stats: any[], ...names: string[]): string | undefined {
+  if (!Array.isArray(stats)) return undefined
+  const normalized = names.map((name) => name.toLowerCase())
+
+  for (const entry of stats) {
+    const name = String(entry?.name || '').toLowerCase()
+    const shortName = String(entry?.shortName || '').toLowerCase()
+    const abbreviation = String(entry?.abbreviation || '').toLowerCase()
+
+    if (normalized.includes(name) || normalized.includes(shortName) || normalized.includes(abbreviation)) {
+      return entry?.displayValue ?? entry?.value?.toString()
+    }
+  }
+
+  return undefined
+}
+
+function toNumber(value: string | undefined, fallback = 0) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function getConferenceName(raw: any): Conference | null {
+  const label = String(raw?.name || raw?.abbreviation || '').toLowerCase()
+  if (label.includes('west') || label.includes('wst')) return 'West'
+  if (label.includes('east') || label.includes('est')) return 'East'
+  return null
+}
+
+function inferConferenceFromEntry(entry: any): Conference | null {
+  const fromStats = String(getStatValue(entry?.stats, 'conference') || entry?.team?.conferenceId || '').toLowerCase()
+  if (fromStats.includes('west') || fromStats === '2') return 'West'
+  if (fromStats.includes('east') || fromStats === '1') return 'East'
+
+  const abbreviation = String(entry?.team?.abbreviation || '').toUpperCase()
+  if (EAST_ABBREVIATIONS.has(abbreviation)) return 'East'
+  if (WEST_ABBREVIATIONS.has(abbreviation)) return 'West'
+
+  return null
+}
+
+function resolveEntries(data: any) {
+  const byConference: Record<Conference, any[]> = { East: [], West: [] }
+
+  function visit(node: any) {
+    if (!node || typeof node !== 'object') return
+
+    const conference = getConferenceName(node)
+    const entries = Array.isArray(node?.standings?.entries) ? node.standings.entries : []
+
+    if (entries.length) {
+      if (conference) {
+        byConference[conference].push(...entries)
+      } else {
+        for (const entry of entries) {
+          const inferred = inferConferenceFromEntry(entry)
+          if (inferred) byConference[inferred].push(entry)
+        }
+      }
+    }
+
+    const children = Array.isArray(node?.children) ? node.children : []
+    for (const child of children) {
+      visit(child)
+    }
+  }
+
+  visit(data)
+
+  const topEntries = Array.isArray(data?.standings?.entries)
+    ? data.standings.entries
+    : Array.isArray(data?.entries)
+      ? data.entries
+      : []
+
+  if (topEntries.length && !byConference.East.length && !byConference.West.length) {
+    for (const entry of topEntries) {
+      const inferred = inferConferenceFromEntry(entry)
+      if (inferred) byConference[inferred].push(entry)
+    }
+  }
+
+  return [
+    { conference: 'East' as Conference, entries: byConference.East },
+    { conference: 'West' as Conference, entries: byConference.West },
+  ]
 }
 
 function parseStandings(data: any): { east: TeamStanding[]; west: TeamStanding[] } {
   const east: TeamStanding[] = []
   const west: TeamStanding[] = []
 
-  const children = Array.isArray(data?.children) ? data.children : []
-  for (const conference of children) {
-    const confName: Conference = conference?.name === 'WEST' ? 'West' : 'East'
-    const entries = conference?.standings?.entries || []
-
-    entries.forEach((entry: any, index: number) => {
+  for (const group of resolveEntries(data)) {
+    group.entries.forEach((entry: any, index: number) => {
+      const rank = toNumber(getStatValue(entry?.stats, 'playoffSeed', 'rank', 'standingSummary'), index + 1)
       const team: TeamStanding = {
         id: Number(entry?.team?.id ?? 0) || undefined,
         name: entry?.team?.displayName || 'Unknown Team',
         shortName: entry?.team?.shortDisplayName || entry?.team?.abbreviation || 'UNK',
         abbreviation: entry?.team?.abbreviation || 'UNK',
-        wins: Number(getStatValue(entry?.stats, 'wins') || 0),
-        losses: Number(getStatValue(entry?.stats, 'losses') || 0),
-        winPct: Number(getStatValue(entry?.stats, 'winPercent') || 0),
-        gamesBack: getStatValue(entry?.stats, 'gamesBack') || getStatValue(entry?.stats, 'playoffSeed'),
-        streak: getStatValue(entry?.stats, 'streak') || undefined,
-        conference: confName,
-        rank: index + 1,
+        wins: toNumber(getStatValue(entry?.stats, 'wins', 'w')),
+        losses: toNumber(getStatValue(entry?.stats, 'losses', 'l')),
+        winPct: toNumber(getStatValue(entry?.stats, 'winPercent', 'pct')),
+        gamesBack: getStatValue(entry?.stats, 'gamesBack', 'gb'),
+        streak: getStatValue(entry?.stats, 'streak', 'strk') || undefined,
+        conference: group.conference,
+        rank,
+        seed: rank,
         logo: entry?.team?.logos?.[0]?.href || entry?.team?.logo,
       }
 
-      if (confName === 'East') east.push(team)
+      if (group.conference === 'East') east.push(team)
       else west.push(team)
     })
   }

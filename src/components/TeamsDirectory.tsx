@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import type { StandingsSnapshotPayload, TeamsListPayload } from '@/lib/nba/types'
+import { teamLogos } from '@/utils/nbaTeamLogos'
 
 function teamHref(abbreviation: string) {
   return `/teams/${abbreviation.toLowerCase()}`
@@ -52,7 +53,7 @@ export default function TeamsDirectory() {
   }, [])
 
   const standingsMap = useMemo(() => {
-    const map = new Map<string, { rank: number; record: string; conference: string; streak?: string }>()
+    const map = new Map<string, { rank: number; seed?: number; record: string; conference: string; streak?: string; logo?: string }>()
     const all = [...(standings?.standings.east || []), ...(standings?.standings.west || [])]
     for (const team of all) {
       map.set(team.abbreviation, {
@@ -60,6 +61,8 @@ export default function TeamsDirectory() {
         record: `${team.wins}-${team.losses}`,
         conference: team.conference,
         streak: team.streak,
+        seed: team.seed,
+        logo: team.logo,
       })
     }
     return map
@@ -124,9 +127,16 @@ export default function TeamsDirectory() {
                 return (
                   <Link key={team.id} href={teamHref(team.abbreviation)} className="card team-directory-card">
                     <div className="team-directory-top">
-                      <div>
-                        <p className="eyebrow">{team.conference} · {team.division}</p>
-                        <h3>{team.fullName}</h3>
+                      <div className="team-directory-team">
+                        <img
+                          src={standing?.logo || teamLogos[team.abbreviation] || `https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/${team.abbreviation.toLowerCase()}.png`}
+                          alt={team.fullName}
+                          className="team-logo"
+                        />
+                        <div>
+                          <p className="eyebrow">{team.conference} · {team.division}</p>
+                          <h3>{team.fullName}</h3>
+                        </div>
                       </div>
                       <span className="badge badge-next">{team.abbreviation}</span>
                     </div>
@@ -137,7 +147,7 @@ export default function TeamsDirectory() {
                       </div>
                       <div>
                         <span className="stat-label">Seed</span>
-                        <strong>{standing ? `#${standing.rank}` : '—'}</strong>
+                        <strong>{standing ? `#${standing.seed ?? standing.rank}` : '—'}</strong>
                       </div>
                     </div>
                     <div className="tiny muted">{standing?.streak ? `Streak ${standing.streak}` : 'Pagina squadra dedicata'}</div>

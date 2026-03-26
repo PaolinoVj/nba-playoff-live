@@ -1,35 +1,12 @@
-export const teamLogos: Record<string, string> = {
-  // Eastern Conference
-  "ATL": "https://loodibee.com/wp-content/uploads/nba-atlanta-hawks-logo.png",
-  "BOS": "https://loodibee.com/wp-content/uploads/nba-boston-celtics-logo.png",
-  "BKN": "https://loodibee.com/wp-content/uploads/nba-brooklyn-nets-logo.png",
-  "CHA": "https://loodibee.com/wp-content/uploads/nba-charlotte-hornets-logo.png",
-  "CHI": "https://loodibee.com/wp-content/uploads/nba-chicago-bulls-logo.png",
-  "CLE": "https://loodibee.com/wp-content/uploads/nba-cleveland-cavaliers-logo.png",
-  "DET": "https://loodibee.com/wp-content/uploads/nba-detroit-pistons-logo.png",
-  "IND": "https://loodibee.com/wp-content/uploads/nba-indiana-pacers-logo.png",
-  "MIA": "https://loodibee.com/wp-content/uploads/nba-miami-heat-logo.png",
-  "MIL": "https://loodibee.com/wp-content/uploads/nba-milwaukee-bucks-logo.png",
-  "NYK": "https://loodibee.com/wp-content/uploads/nba-new-york-knicks-logo.png",
-  "ORL": "https://loodibee.com/wp-content/uploads/nba-orlando-magic-logo.png",
-  "PHI": "https://loodibee.com/wp-content/uploads/nba-philadelphia-76ers-logo.png",
-  "TOR": "https://loodibee.com/wp-content/uploads/nba-toronto-raptors-logo.png",
-  "WAS": "https://loodibee.com/wp-content/uploads/nba-washington-wizards-logo.png",
+const NBA_TEAM_ABBREVIATIONS = [
+  'ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DET', 'IND', 'MIA', 'MIL', 'NYK', 'ORL', 'PHI', 'TOR', 'WAS',
+  'DAL', 'DEN', 'GSW', 'HOU', 'LAC', 'LAL', 'MEM', 'MIN', 'NOP', 'OKC', 'PHX', 'POR', 'SAC', 'SAS', 'UTA',
+] as const
 
-  // Western Conference
-  "DAL": "https://loodibee.com/wp-content/uploads/nba-dallas-mavericks-logo.png",
-  "DEN": "https://loodibee.com/wp-content/uploads/nba-denver-nuggets-logo.png",
-  "GSW": "https://loodibee.com/wp-content/uploads/nba-golden-state-warriors-logo.png",
-  "HOU": "https://loodibee.com/wp-content/uploads/nba-houston-rockets-logo.png",
-  "LAC": "https://loodibee.com/wp-content/uploads/nba-la-clippers-logo.png",
-  "LAL": "https://loodibee.com/wp-content/uploads/nba-los-angeles-lakers-logo.png",
-  "MEM": "https://loodibee.com/wp-content/uploads/nba-memphis-grizzlies-logo.png",
-  "MIN": "https://loodibee.com/wp-content/uploads/nba-minnesota-timberwolves-logo.png",
-  "NOP": "https://loodibee.com/wp-content/uploads/nba-new-orleans-pelicans-logo.png",
-  "OKC": "https://loodibee.com/wp-content/uploads/nba-oklahoma-city-thunder-logo.png",
-  "PHX": "https://loodibee.com/wp-content/uploads/nba-phoenix-suns-logo.png",
-  "POR": "https://loodibee.com/wp-content/uploads/nba-portland-trail-blazers-logo.png",
-  "SAC": "https://loodibee.com/wp-content/uploads/nba-sacramento-kings-logo.png",
-  "SAS": "https://loodibee.com/wp-content/uploads/nba-san-antonio-spurs-logo.png",
-  "UTA": "https://loodibee.com/wp-content/uploads/nba-utah-jazz-logo.png"
-};
+export function getEspnTeamLogo(abbreviation: string) {
+  return `https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/${abbreviation.toLowerCase()}.png`
+}
+
+export const teamLogos: Record<string, string> = Object.fromEntries(
+  NBA_TEAM_ABBREVIATIONS.map((abbreviation) => [abbreviation, getEspnTeamLogo(abbreviation)])
+)

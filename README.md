@@ -50,6 +50,15 @@ Crea o aggiorna `.env.local`:
 BALLDONTLIE_API_KEY=la_tua_api_key
 ```
 
+> L'app legge anche il fallback `BALDONTLIE_API_KEY` (senza la seconda `L`) per evitare rotture su progetti Vercel già configurati con un nome legacy.
+
+### Vercel (variabili criptate)
+
+1. Apri **Project → Settings → Environment Variables**.
+2. Inserisci `BALLDONTLIE_API_KEY` (oppure il legacy `BALDONTLIE_API_KEY`) nei target che usi (`Preview`/`Production`).
+3. Fai un **Redeploy** dopo il salvataggio.
+4. Verifica la configurazione con `/api/nba/health`: `providers.balldontlieConfigured` deve essere `true`.
+
 Senza questa chiave:
 
 - la home continua a funzionare con ESPN
