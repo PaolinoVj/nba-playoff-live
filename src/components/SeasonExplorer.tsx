@@ -1,10 +1,37 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import type { GamesListPayload, HistoricalGame, StandingsSnapshotPayload, TeamsListPayload } from '@/lib/nba/types'
+import type { GamesListPayload, HistoricalGame, StandingsSnapshotPayload, TeamStanding, TeamsListPayload } from '@/lib/nba/types'
+import { teamLogos } from '@/utils/nbaTeamLogos'
 
 interface SeasonExplorerProps {
   initialSeason: number
+}
+
+
+function renderStandingRow(team: TeamStanding) {
+  return (
+    <tr key={team.abbreviation}>
+      <td>{team.seed ?? team.rank}</td>
+      <td>
+        <div className="team-cell">
+          <img
+            src={team.logo || teamLogos[team.abbreviation] || `https://a.espncdn.com/i/teamlogos/nba/500/${team.abbreviation.toLowerCase()}.png`}
+            alt={team.name}
+            className="team-logo small"
+          />
+          <div>
+            <strong>{team.abbreviation}</strong>
+            <div className="muted tiny">{team.name}</div>
+          </div>
+        </div>
+      </td>
+      <td>{team.wins}</td>
+      <td>{team.losses}</td>
+      <td>{team.winPct.toFixed(3)}</td>
+      <td>{team.streak || '—'}</td>
+    </tr>
+  )
 }
 
 function scoreLabel(game: HistoricalGame) {
@@ -131,7 +158,7 @@ export default function SeasonExplorer({ initialSeason }: SeasonExplorerProps) {
       <section className="hero-grid season-hero-grid">
         <div className="card hero-card">
           <p className="eyebrow">Season explorer</p>
-          <h1>Questa stagione dall'inizio, con orari italiani e archivio interrogabile.</h1>
+          <h1>Questa stagione dall&apos;inizio, con orari italiani e archivio interrogabile.</h1>
           <p className="hero-text">
             La pagina usa route interne su Vercel: standings correnti da ESPN e storico partite interrogato on demand da balldontlie.
             Nessun archivio scaricato localmente: filtri, paginazione e orari convertiti in Europa/Roma.
@@ -207,7 +234,7 @@ export default function SeasonExplorer({ initialSeason }: SeasonExplorerProps) {
         </div>
         {standingsError ? <div className="empty card">{standingsError}</div> : null}
         {standingsLoading ? <div className="empty card">Carico standings…</div> : null}
-        {!standingsLoading && !standingsError ? (
+        {!standingsLoading && !standingsError && (eastTeams.length || westTeams.length) ? (
           <div className="cards-grid two-up">
             <section className="card standings-card">
               <div className="section-head compact">
@@ -218,23 +245,16 @@ export default function SeasonExplorer({ initialSeason }: SeasonExplorerProps) {
                 <table className="standings-table">
                   <thead>
                     <tr>
-                      <th>#</th>
+                      <th>Seed</th>
                       <th>Team</th>
                       <th>W</th>
                       <th>L</th>
                       <th>%</th>
+                      <th>Strk</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {eastTeams.map((team) => (
-                      <tr key={team.abbreviation}>
-                        <td>{team.rank}</td>
-                        <td>{team.abbreviation}</td>
-                        <td>{team.wins}</td>
-                        <td>{team.losses}</td>
-                        <td>{team.winPct.toFixed(3)}</td>
-                      </tr>
-                    ))}
+                    {eastTeams.map(renderStandingRow)}
                   </tbody>
                 </table>
               </div>
@@ -248,28 +268,24 @@ export default function SeasonExplorer({ initialSeason }: SeasonExplorerProps) {
                 <table className="standings-table">
                   <thead>
                     <tr>
-                      <th>#</th>
+                      <th>Seed</th>
                       <th>Team</th>
                       <th>W</th>
                       <th>L</th>
                       <th>%</th>
+                      <th>Strk</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {westTeams.map((team) => (
-                      <tr key={team.abbreviation}>
-                        <td>{team.rank}</td>
-                        <td>{team.abbreviation}</td>
-                        <td>{team.wins}</td>
-                        <td>{team.losses}</td>
-                        <td>{team.winPct.toFixed(3)}</td>
-                      </tr>
-                    ))}
+                    {westTeams.map(renderStandingRow)}
                   </tbody>
                 </table>
               </div>
             </section>
           </div>
+        ) : null}
+        {!standingsLoading && !standingsError && !eastTeams.length && !westTeams.length ? (
+          <div className="empty card">Nessuna classifica disponibile al momento. Riprova tra poco.</div>
         ) : null}
       </section>
 

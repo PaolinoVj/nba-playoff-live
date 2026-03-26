@@ -138,37 +138,89 @@ function parseGame(event: any): ScoreboardGame {
   }
 }
 
-function getStatValue(stats: any[], name: string): string | undefined {
-  const hit = stats?.find((entry: any) => entry.name === name)
-  return hit?.displayValue ?? hit?.value?.toString()
+function getStatValue(stats: any[], ...names: string[]): string | undefined {
+  if (!Array.isArray(stats)) return undefined
+  const normalized = names.map((name) => name.toLowerCase())
+
+  for (const entry of stats) {
+    const name = String(entry?.name || '').toLowerCase()
+    const shortName = String(entry?.shortName || '').toLowerCase()
+    const abbreviation = String(entry?.abbreviation || '').toLowerCase()
+
+    if (normalized.includes(name) || normalized.includes(shortName) || normalized.includes(abbreviation)) {
+      return entry?.displayValue ?? entry?.value?.toString()
+    }
+  }
+
+  return undefined
+}
+
+function toNumber(value: string | undefined, fallback = 0) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function getConferenceName(raw: any): Conference {
+  const label = String(raw?.name || raw?.abbreviation || '').toLowerCase()
+  return label.includes('west') ? 'West' : 'East'
+}
+
+function resolveEntries(data: any) {
+  const groups = Array.isArray(data?.children) ? data.children : []
+
+  if (groups.length) {
+    return groups.map((group: any) => ({
+      conference: getConferenceName(group),
+      entries: Array.isArray(group?.standings?.entries) ? group.standings.entries : [],
+    }))
+  }
+
+  const topEntries = Array.isArray(data?.standings?.entries)
+    ? data.standings.entries
+    : Array.isArray(data?.entries)
+      ? data.entries
+      : []
+
+  const eastEntries = topEntries.filter((entry: any) => {
+    const conference = String(getStatValue(entry?.stats, 'conference') || entry?.team?.conferenceId || '').toLowerCase()
+    return conference.includes('east') || conference === '1'
+  })
+
+  const westEntries = topEntries.filter((entry: any) => {
+    const conference = String(getStatValue(entry?.stats, 'conference') || entry?.team?.conferenceId || '').toLowerCase()
+    return conference.includes('west') || conference === '2'
+  })
+
+  return [
+    { conference: 'East' as Conference, entries: eastEntries },
+    { conference: 'West' as Conference, entries: westEntries },
+  ]
 }
 
 function parseStandings(data: any): { east: TeamStanding[]; west: TeamStanding[] } {
   const east: TeamStanding[] = []
   const west: TeamStanding[] = []
 
-  const children = Array.isArray(data?.children) ? data.children : []
-  for (const conference of children) {
-    const confName: Conference = conference?.name === 'WEST' ? 'West' : 'East'
-    const entries = conference?.standings?.entries || []
-
-    entries.forEach((entry: any, index: number) => {
+  for (const group of resolveEntries(data)) {
+    group.entries.forEach((entry: any, index: number) => {
+      const rank = toNumber(getStatValue(entry?.stats, 'playoffSeed', 'rank', 'standingSummary'), index + 1)
       const team: TeamStanding = {
         id: Number(entry?.team?.id ?? 0) || undefined,
         name: entry?.team?.displayName || 'Unknown Team',
         shortName: entry?.team?.shortDisplayName || entry?.team?.abbreviation || 'UNK',
         abbreviation: entry?.team?.abbreviation || 'UNK',
-        wins: Number(getStatValue(entry?.stats, 'wins') || 0),
-        losses: Number(getStatValue(entry?.stats, 'losses') || 0),
-        winPct: Number(getStatValue(entry?.stats, 'winPercent') || 0),
-        gamesBack: getStatValue(entry?.stats, 'gamesBack') || getStatValue(entry?.stats, 'playoffSeed'),
-        streak: getStatValue(entry?.stats, 'streak') || undefined,
-        conference: confName,
-        rank: index + 1,
+        wins: toNumber(getStatValue(entry?.stats, 'wins', 'w')),
+        losses: toNumber(getStatValue(entry?.stats, 'losses', 'l')),
+        winPct: toNumber(getStatValue(entry?.stats, 'winPercent', 'pct')),
+        gamesBack: getStatValue(entry?.stats, 'gamesBack', 'gb'),
+        streak: getStatValue(entry?.stats, 'streak', 'strk') || undefined,
+        conference: group.conference,
+        rank,
+        seed: rank,
         logo: entry?.team?.logos?.[0]?.href || entry?.team?.logo,
       }
 
-      if (confName === 'East') east.push(team)
+      if (group.conference === 'East') east.push(team)
       else west.push(team)
     })
   }
